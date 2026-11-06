@@ -46,6 +46,24 @@ function fieldSchema(def: FieldDef, mode: ValidationMode): z.ZodType {
         .min(publish ? def.min : 0)
         .max(def.max)
         .refine((ids) => new Set(ids).size === ids.length, "cadeau en double");
+    case "riddleList": {
+      const text = (max: number, min = 0) => z.string().trim().min(min).max(max);
+      const photo = photoValueSchema.extend({ alt: z.string().trim().min(1).max(140) });
+      const riddle = z
+        .strictObject({
+          question: text(def.questionMax, publish ? 1 : 0),
+          choices: z.array(text(def.choiceMax, publish ? 1 : 0)).length(def.choices),
+          answer: z.number().int().min(0).max(def.choices - 1),
+          hint: text(def.hintMax).optional(),
+          photo: publish && def.photo.required ? photo : photo.optional(),
+          reveal: text(def.revealMax, publish ? 1 : 0),
+        })
+        .refine(
+          (r) => !publish || new Set(r.choices.map((c) => c.toLocaleLowerCase("fr"))).size === r.choices.length,
+          "propositions en double",
+        );
+      return z.array(riddle).min(publish ? def.min : 0).max(def.max);
+    }
   }
 }
 
@@ -55,6 +73,7 @@ function isRequired(def: FieldDef): boolean {
       return false;
     case "wordList":
     case "giftList":
+    case "riddleList":
       return def.min > 0;
     default:
       return def.required;

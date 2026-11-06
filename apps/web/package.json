@@ -11,6 +11,8 @@
   },
   "dependencies": {
     "@zaweli/shared-types": "workspace:^",
+    "@zaweli/template-coffret": "workspace:^",
+    "@zaweli/template-engine": "workspace:^",
     "@zaweli/ui": "workspace:^",
     "next": "16.4.5",
     "react": "19.3.0",

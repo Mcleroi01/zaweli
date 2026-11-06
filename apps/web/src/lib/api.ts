@@ -1,4 +1,10 @@
-import { healthResponseSchema, type HealthResponse } from "@zaweli/shared-types";
+import {
+  experienceSlugSchema,
+  healthResponseSchema,
+  publicExperienceResponseSchema,
+  type HealthResponse,
+  type PublicExperienceResponse,
+} from "@zaweli/shared-types";
 
 /**
  * URL de l'API côté serveur Next. API_URL_INTERNAL permet, en production,
@@ -22,4 +28,16 @@ export async function fetchHealth(): Promise<HealthResult> {
   } catch (error) {
     return { reachable: false, reason: error instanceof Error ? error.message : "inconnue" };
   }
+}
+
+/**
+ * Expérience publiée, pour le destinataire. `null` si elle n'est pas
+ * disponible (inexistante, désactivée, suspendue…) : l'API ne distingue pas.
+ */
+export async function fetchPublicExperience(slug: string): Promise<PublicExperienceResponse | null> {
+  if (!experienceSlugSchema.safeParse(slug).success) return null;
+  const res = await fetch(`${apiBaseUrl()}/v1/public/experiences/${slug}`, { signal: AbortSignal.timeout(5000) });
+  if (res.status === 404) return null;
+  if (!res.ok) throw new Error(`API : ${res.status}`);
+  return publicExperienceResponseSchema.parse(await res.json());
 }

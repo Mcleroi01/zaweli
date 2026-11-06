@@ -52,6 +52,20 @@ export type WordListField = Base & { kind: "wordList"; min: number; max: number;
 
 export type GiftListField = Base & { kind: "giftList"; min: number; max: number; types: GiftType[] };
 
+/** Énigmes à choix multiple (classe « affective » : débloque une photo et un message). */
+export type RiddleListField = Base & {
+  kind: "riddleList";
+  min: number;
+  max: number;
+  /** Nombre exact de propositions par énigme. */
+  choices: number;
+  questionMax: number;
+  choiceMax: number;
+  hintMax: number;
+  revealMax: number;
+  photo: { required: boolean; ratio: `${number}:${number}` };
+};
+
 export type FieldDef =
   | ShortTextField
   | LongTextField
@@ -60,7 +74,8 @@ export type FieldDef =
   | ToggleField
   | PhotoField
   | WordListField
-  | GiftListField;
+  | GiftListField
+  | RiddleListField;
 
 export type FieldKind = FieldDef["kind"];
 
@@ -120,5 +135,22 @@ export const f = {
     bounds(o.min, o.max, o.label);
     if (o.types.length === 0) throw new Error(`${o.label} : au moins un type de cadeau`);
     return { kind: "giftList", label: o.label, help: o.help, min: o.min, max: o.max, types: o.types };
+  },
+
+  riddleList(o: {
+    label: string;
+    min: number;
+    max: number;
+    choices: number;
+    questionMax: number;
+    choiceMax: number;
+    hintMax: number;
+    revealMax: number;
+    photo: { required: boolean; ratio: `${number}:${number}` };
+    help?: string;
+  }): RiddleListField {
+    bounds(o.min, o.max, o.label);
+    if (o.choices < 2) throw new Error(`${o.label} : au moins 2 propositions`);
+    return { kind: "riddleList", ...o };
   },
 };

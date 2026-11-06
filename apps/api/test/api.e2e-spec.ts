@@ -194,3 +194,52 @@ describe("S3 — publications simultanées (vrai PostgreSQL, 2 connexions)", () 
     expect(used.rows[0].publications_used).toBe(1);
   });
 });
+
+describe("Expérience publique (destinataire, sans compte)", () => {
+  it("sert l'instantané publié, et rien d'autre", async () => {
+    const tplRow = await api.query("select id, current_version_id from app.templates where slug = 'coffret'");
+    expect(tplRow.rowCount, "lance `pnpm templates:sync` avant les tests e2e").toBe(1);
+    const { id: templateId, current_version_id: versionId } = tplRow.rows[0];
+    const recipient = await api.query("insert into app.recipients (owner_id, display_name) values ($1, 'Awa') returning id", [userId]);
+    const exp = await api.query(
+      `insert into app.experiences (owner_id, template_id, template_version_id, recipient_id, content)
+       values ($1, $2, $3, $4, '{"brouillon":"secret"}') returning id`,
+      [userId, templateId, versionId, recipient.rows[0].id],
+    );
+    const experienceId = exp.rows[0].id;
+    const payload = { schema: 1, rendererKey: "coffret@1.0.0", fields: { name: "Awa" }, disabledSections: [], salt: "s" };
+    const slug = `E2e${Date.now()}`;
+
+    const client = await api.connect();
+    try {
+      await client.query("begin");
+      const snap = await client.query(
+        `insert into app.experience_snapshots (experience_id, revision, template_version_id, public_payload, protected_payload)
+         values ($1, 1, $2, $3, '{"code":"PROTEGE"}') returning id`,
+        [experienceId, versionId, JSON.stringify(payload)],
+      );
+      await client.query(
+        `update app.experiences set status = 'published', slug = $2, current_snapshot_id = $3,
+           first_published_at = now(), last_published_at = now() where id = $1`,
+        [experienceId, slug, snap.rows[0].id],
+      );
+      await client.query("commit");
+    } finally {
+      client.release();
+    }
+
+    const res = await request(app.getHttpServer()).get(`/v1/public/experiences/${slug}`).expect(200);
+    expect(res.body).toEqual({ rendererKey: "coffret@1.0.0", payload });
+    // Ni le brouillon, ni la partie protégée ne fuient.
+    expect(JSON.stringify(res.body)).not.toMatch(/secret|PROTEGE/);
+
+    // Désactivée : même réponse qu'un lien inexistant (S19, pas d'énumération).
+    await api.query("update app.experiences set status = 'disabled' where id = $1", [experienceId]);
+    const disabled = await request(app.getHttpServer()).get(`/v1/public/experiences/${slug}`).expect(404);
+    const missing = await request(app.getHttpServer()).get("/v1/public/experiences/AAAAAAAAAAAAAAAA").expect(404);
+    expect(disabled.body.error.message).toBe(missing.body.error.message);
+
+    // Lien mal formé : refusé sans requête en base.
+    await request(app.getHttpServer()).get("/v1/public/experiences/x'%20or%201=1").expect(404);
+  });
+});

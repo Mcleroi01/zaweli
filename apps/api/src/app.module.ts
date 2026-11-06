@@ -8,6 +8,7 @@ import { ConfigModule } from "./config/config.module.js";
 import { DatabaseModule } from "./database/database.module.js";
 import { HealthController } from "./health/health.controller.js";
 import { MeController } from "./me/me.controller.js";
+import { PublicExperiencesController } from "./public-experiences/public-experiences.controller.js";
 
 @Module({
   imports: [
@@ -16,7 +17,7 @@ import { MeController } from "./me/me.controller.js";
     ThrottlerModule.forRoot([{ name: "default", ttl: 60_000, limit: 120 }]),
     DatabaseModule,
   ],
-  controllers: [HealthController, MeController],
+  controllers: [HealthController, MeController, PublicExperiencesController],
   providers: [
     JwtVerifierService,
     // Ordre : limitation de débit, puis authentification.

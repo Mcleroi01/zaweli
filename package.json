@@ -19,7 +19,9 @@
     "db:reset": "supabase db reset",
     "db:status": "supabase status",
     "format": "prettier --write .",
-    "env:local": "node scripts/supabase-env.mjs"
+    "env:local": "node scripts/supabase-env.mjs",
+    "templates:sync": "pnpm --filter @zaweli/api templates:sync",
+    "demo:seed": "pnpm --filter @zaweli/api demo:seed"
   },
   "devDependencies": {
     "@electric-sql/pglite": "0.5.15",

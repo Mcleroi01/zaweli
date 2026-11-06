@@ -27,7 +27,10 @@ pnpm dev
 
 - Site : http://localhost:3000 (`/status` affiche l'état de l'API et de la base)
 - API : http://localhost:4000/v1/health
+- Démonstration de Coffret : http://localhost:3000/templates/coffret/demo
 - Supabase Studio : http://127.0.0.1:54323
+
+Pour publier une vraie expérience en local : `pnpm templates:sync` puis `pnpm demo:seed`. Après chaque redémarrage de Supabase, relancer `pnpm env:local`.
 
 Détails, commandes et vérifications : [`docs/06-fondation-technique.md`](docs/06-fondation-technique.md).
 
@@ -40,8 +43,8 @@ Détails, commandes et vérifications : [`docs/06-fondation-technique.md`](docs/
 | 2 — Architecture technique | [`docs/03-architecture-technique.md`](docs/03-architecture-technique.md) | ✅ v0.1 validée (A1 à A16) |
 | 3 — Modèle de données | [`docs/04-modele-de-donnees.md`](docs/04-modele-de-donnees.md), `supabase/` | ✅ Validée. 10 migrations, appliquées sur le vrai Supabase local. |
 | 4 — Maquettes du SaaS | [`docs/05-maquettes-ux.md`](docs/05-maquettes-ux.md) + [`docs/maquettes/wireframes.html`](docs/maquettes/wireframes.html) | 📝 Structure livrée. Direction visuelle U1 à valider. |
-| 5 — Fondation technique | [`docs/06-fondation-technique.md`](docs/06-fondation-technique.md) | 📝 Livrée, à valider. Lint, typecheck, 23 tests unitaires, 68 tests du schéma et 10 e2e réussis. |
-| 6 — Premier template (« Coffret », issu de Pauline) | — | ⏳ Non commencé |
+| 5 — Fondation technique | [`docs/06-fondation-technique.md`](docs/06-fondation-technique.md) | ✅ Livrée et commitée |
+| 6 — Premier template (« Coffret », issu de Pauline) | [`docs/07-template-coffret.md`](docs/07-template-coffret.md) | 📝 Livré, à valider. Parcours complet vérifié dans Chrome depuis la base. 39 tests unitaires et 11 e2e réussis. |
 
 ## Structure
 
@@ -55,7 +58,7 @@ zaweli/
 │   ├── shared-types/     Codes d'erreur et contrats d'API (Zod)
 │   ├── template-engine/  Manifestes, DSL de champs, validation du contenu
 │   └── ui/               Design system du SaaS
-├── templates/            Un paquet par template (Coffret en phase 6)
+├── templates/coffret/    Premier template officiel (issu de Pauline)
 ├── supabase/             config.toml, migrations, seed local, tests
 ├── scripts/              Outils de développement
 └── docs/
