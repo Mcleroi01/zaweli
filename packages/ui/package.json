@@ -1,0 +1,26 @@
+{
+  "name": "@zaweli/ui",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Design system du SaaS ZAWELI (pas des templates). Sources TypeScript transpilées par Next.js.",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./theme.css": "./src/theme.css"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src"
+  },
+  "peerDependencies": {
+    "react": "^19.0.0"
+  },
+  "devDependencies": {
+    "@types/react": "19",
+    "@zaweli/config": "workspace:^",
+    "eslint": "10.14.0",
+    "react": "19.3.0",
+    "typescript": "6.0.3",
+    "typescript-eslint": "8.72.1"
+  }
+}

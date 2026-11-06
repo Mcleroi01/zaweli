@@ -1,0 +1,417 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>ZAWELI — Wireframes v0.1</title>
+<style>
+  :root {
+    --bg: #ece8e1; --paper: #fbf8f3; --surface: #ffffff; --ink: #1c1416; --muted: #6f6669;
+    --line: #d9d2c8; --fill: #e7e1d8; --fill2: #f1ece4; --primary: #7a0f1e; --gold: #b8862f;
+    --ok: #1f7a4d; --warn: #9a6400; --err: #b42318; --info: #1f5fa8;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 14px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  header.doc { padding: 32px 40px 8px; max-width: 1400px; margin: 0 auto; }
+  header.doc h1 { font: 600 28px/1.2 Georgia, serif; margin: 0 0 6px; }
+  header.doc p { margin: 0 0 6px; color: var(--muted); max-width: 900px; }
+  .legend { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 10px; font-size: 12px; color: var(--muted); }
+  .legend span { display: inline-flex; align-items: center; gap: 6px; }
+  main { max-width: 1400px; margin: 0 auto; padding: 16px 40px 80px; display: flex; flex-direction: column; gap: 48px; }
+  section.screen h2 { font: 600 18px/1.3 Georgia, serif; margin: 0 0 4px; }
+  section.screen > p { margin: 0 0 14px; color: var(--muted); max-width: 900px; }
+  .row { display: flex; flex-wrap: wrap; gap: 28px; align-items: flex-start; }
+
+  /* Cadres d'appareil */
+  .desk { width: 1000px; max-width: 100%; background: var(--paper); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; box-shadow: 0 10px 30px -18px rgb(0 0 0 / .35); }
+  .desk::before { content: ""; display: block; height: 26px; background: #dcd5ca; border-bottom: 1px solid var(--line);
+    background-image: radial-gradient(circle at 14px 13px, #c4bcb0 5px, transparent 6px), radial-gradient(circle at 32px 13px, #c4bcb0 5px, transparent 6px), radial-gradient(circle at 50px 13px, #c4bcb0 5px, transparent 6px); }
+  .mob { width: 340px; background: var(--paper); border: 10px solid #2a2325; border-radius: 34px; overflow: hidden; box-shadow: 0 10px 30px -18px rgb(0 0 0 / .45); position: relative; }
+  .mob .scr { min-height: 640px; display: flex; flex-direction: column; }
+  .cap { font-size: 12px; color: var(--muted); margin-top: 8px; }
+
+  /* Briques */
+  .bar { display: flex; align-items: center; gap: 14px; padding: 12px 18px; border-bottom: 1px solid var(--line); background: var(--surface); }
+  .logo { font: 700 15px Georgia, serif; letter-spacing: .08em; }
+  .grow { flex: 1; }
+  .nav { display: flex; gap: 16px; color: var(--muted); font-size: 13px; }
+  .btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 8px 14px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); font-size: 13px; white-space: nowrap; }
+  .btn.p { background: var(--primary); border-color: var(--primary); color: #fff; }
+  .btn.g { border-color: var(--gold); color: var(--gold); }
+  .btn.s { padding: 5px 10px; font-size: 12px; }
+  .btn.block { width: 100%; }
+  .btn.dis { opacity: .45; }
+  .chip { display: inline-block; padding: 4px 10px; border-radius: 999px; background: var(--fill2); border: 1px solid var(--line); font-size: 12px; }
+  .chip.on { background: var(--ink); color: #fff; border-color: var(--ink); }
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 11px; background: var(--fill); }
+  .badge.gold { background: #f3e6c8; color: #6b4d12; }
+  .badge.ok { background: #d8efe2; color: var(--ok); }
+  .badge.warn { background: #f6e7c8; color: var(--warn); }
+  .badge.err { background: #f6d9d6; color: var(--err); }
+  .badge.info { background: #dbe7f6; color: var(--info); }
+  .img { background: repeating-linear-gradient(45deg, var(--fill) 0 8px, var(--fill2) 8px 16px); border: 1px solid var(--line); border-radius: 10px; display: grid; place-items: center; color: var(--muted); font-size: 11px; text-align: center; }
+  .ln { height: 9px; border-radius: 5px; background: var(--fill); margin: 6px 0; }
+  .ln.w60 { width: 60%; } .ln.w40 { width: 40%; } .ln.w80 { width: 80%; }
+  .h { font: 600 22px/1.2 Georgia, serif; margin: 0; }
+  .h2 { font: 600 16px/1.3 Georgia, serif; margin: 0; }
+  .sm { font-size: 12px; color: var(--muted); }
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 14px; }
+  .pad { padding: 18px; }
+  .grid { display: grid; gap: 14px; }
+  .g2 { grid-template-columns: 1fr 1fr; } .g3 { grid-template-columns: repeat(3, 1fr); } .g4 { grid-template-columns: repeat(4, 1fr); } .g5 { grid-template-columns: repeat(5, 1fr); }
+  .field { margin-bottom: 12px; }
+  .field label { display: block; font-size: 12px; font-weight: 600; margin-bottom: 4px; }
+  .input { border: 1px solid var(--line); background: var(--surface); border-radius: 8px; padding: 8px 10px; color: var(--muted); font-size: 13px; display: flex; justify-content: space-between; gap: 8px; }
+  .input.ta { min-height: 64px; align-items: flex-start; }
+  .note { border-left: 3px solid var(--info); background: #eef3fa; padding: 8px 10px; border-radius: 6px; font-size: 12px; }
+  .note.warn { border-color: var(--warn); background: #fbf3e2; }
+  .note.ok { border-color: var(--ok); background: #e9f5ee; }
+  .note.err { border-color: var(--err); background: #fbecea; }
+  .side { width: 210px; background: var(--surface); border-right: 1px solid var(--line); padding: 14px 10px; display: flex; flex-direction: column; gap: 2px; }
+  .side .it { padding: 7px 10px; border-radius: 8px; color: var(--muted); font-size: 13px; }
+  .side .it.on { background: var(--fill2); color: var(--ink); font-weight: 600; }
+  .layout { display: flex; min-height: 560px; }
+  .stepper { display: flex; flex-direction: column; gap: 2px; }
+  .step { display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 8px; font-size: 13px; color: var(--muted); }
+  .step i { width: 20px; height: 20px; border-radius: 50%; border: 1px solid var(--line); display: grid; place-items: center; font-style: normal; font-size: 11px; background: var(--surface); }
+  .step.done i { background: var(--ok); color: #fff; border-color: var(--ok); }
+  .step.cur { background: var(--fill2); color: var(--ink); font-weight: 600; }
+  .step.cur i { border-color: var(--primary); color: var(--primary); }
+  .step.warn i { border-color: var(--warn); color: var(--warn); }
+  .phone { width: 210px; height: 420px; border: 7px solid #2a2325; border-radius: 26px; margin: 0 auto; background: linear-gradient(180deg, #5c0d19, #2a0509); color: #f3d58d; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 10px; font: 600 18px Georgia, serif; }
+  .phone .env { width: 130px; height: 88px; border-radius: 6px; background: #e8dcc5; position: relative; }
+  .phone .env::after { content: "P"; position: absolute; left: 50%; top: 55%; translate: -50% -50%; width: 30px; height: 30px; border-radius: 50%; background: #c49a3c; color: #5b3a0d; display: grid; place-items: center; font-size: 14px; }
+  .gauge { height: 8px; border-radius: 4px; background: var(--fill); overflow: hidden; } .gauge b { display: block; height: 100%; background: var(--primary); }
+  .tbl { width: 100%; border-collapse: collapse; font-size: 12px; } .tbl th, .tbl td { text-align: left; padding: 8px; border-bottom: 1px solid var(--line); } .tbl th { color: var(--muted); font-weight: 600; }
+  .bottombar { margin-top: auto; display: flex; gap: 8px; padding: 10px 12px; border-top: 1px solid var(--line); background: var(--surface); }
+  .tabs { margin-top: auto; display: grid; grid-template-columns: repeat(5, 1fr); border-top: 1px solid var(--line); background: var(--surface); font-size: 10px; text-align: center; color: var(--muted); }
+  .tabs div { padding: 8px 0 10px; } .tabs .on { color: var(--primary); font-weight: 600; }
+  .tabs .plus { color: #fff; } .tabs .plus span { display: inline-grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; background: var(--primary); font-size: 18px; }
+  .ann { outline: 2px dashed var(--info); outline-offset: 3px; position: relative; }
+  .ann::after { content: attr(data-n); position: absolute; top: 4px; right: 4px; width: 22px; height: 22px; border-radius: 50%; background: var(--info); color: #fff; font: 600 11px system-ui; display: grid; place-items: center; }
+  ol.notes { margin: 10px 0 0; padding-left: 20px; font-size: 13px; color: var(--muted); max-width: 900px; }
+  .qr { width: 130px; height: 130px; margin: 0 auto; background:
+      linear-gradient(90deg, transparent 50%, #fff 50%) 0 0/14px 14px, linear-gradient(transparent 50%, #fff 50%) 0 0/14px 14px, #1c1416; border: 8px solid #fff; outline: 1px solid var(--line); }
+  .tile { border: 1px solid var(--line); border-radius: 12px; padding: 10px; text-align: center; background: var(--surface); font-size: 12px; }
+  .tile b { display: block; font-size: 13px; margin: 4px 0 2px; }
+  .tile.on { border: 2px solid var(--primary); background: #fbf1f2; }
+  .ico { width: 26px; height: 26px; border-radius: 8px; background: var(--fill); display: inline-block; }
+  @media (max-width: 1080px) { main, header.doc { padding-left: 16px; padding-right: 16px; } }
+</style>
+</head>
+<body>
+<header class="doc">
+  <h1>ZAWELI — Wireframes basse fidélité v0.1</h1>
+  <p>Structure des écrans clés du SaaS, à valider avant le développement des pages. Les couleurs ne servent qu'à repérer les actions principales (bordeaux), les éléments payants (or) et les états. L'identité visuelle finale est la décision U1.</p>
+  <p>Référence : <code>docs/05-maquettes-ux.md</code>. Les pastilles bleues numérotées renvoient aux notes sous chaque écran.</p>
+  <div class="legend">
+    <span><span class="btn p s">Action</span> action principale</span>
+    <span><span class="badge gold">Payant</span> formule ou valeur</span>
+    <span><span class="img" style="width:40px;height:20px"></span> image ou template</span>
+    <span><span class="chip">Puce</span> filtre ou option</span>
+  </div>
+</header>
+
+<main>
+
+<!-- W1 -->
+<section class="screen">
+  <h2>W1 · Accueil</h2>
+  <p>Comprendre le concept en 10 secondes et voir une vraie expérience.</p>
+  <div class="row">
+    <div class="desk">
+      <div class="bar"><span class="logo">ZAWELI</span><div class="nav"><span>Modèles</span><span>Tarifs</span><span>Comment ça marche</span><span>FAQ</span></div><div class="grow"></div><span class="btn s">Se connecter</span><span class="btn p s">Créer une surprise</span></div>
+      <div class="pad grid g2" style="align-items:center;padding:36px 40px">
+        <div>
+          <p class="sm" style="letter-spacing:.12em;text-transform:uppercase">Expériences numériques à offrir</p>
+          <p class="h" style="font-size:34px">Offre un moment, pas seulement un message.</p>
+          <p class="sm" style="font-size:14px;margin:12px 0 18px">Choisis un modèle conçu par notre studio, ajoute tes photos, tes mots et tes cadeaux, puis partage un lien unique.</p>
+          <span class="btn p">Créer une surprise</span> <span class="btn">Voir une démonstration</span>
+          <p class="sm" style="margin-top:12px">Ta première création est offerte.</p>
+        </div>
+        <div class="ann" data-n="1"><div class="phone"><div class="env"></div><span style="font-size:14px">Pour Pauline</span></div></div>
+      </div>
+      <div class="pad" style="padding:8px 40px 28px">
+        <p class="h2" style="margin-bottom:12px">Comment ça marche</p>
+        <div class="grid g3">
+          <div class="card"><b>1 · Choisis</b><p class="sm">Un modèle pour l'occasion</p></div>
+          <div class="card"><b>2 · Personnalise</b><p class="sm">Photos, mots, énigmes, cadeaux</p></div>
+          <div class="card"><b>3 · Partage</b><p class="sm">Un lien et un QR code</p></div>
+        </div>
+        <p class="h2" style="margin:22px 0 12px">Des cadeaux à déballer</p>
+        <div class="grid g5 ann" data-n="2">
+          <div class="tile"><span class="ico"></span><b>Argent</b>promesse</div>
+          <div class="tile"><span class="ico"></span><b>Objet</b>à remettre</div>
+          <div class="tile"><span class="ico"></span><b>Invitation</b>lieu, date</div>
+          <div class="tile"><span class="ico"></span><b>Bon</b>pour…</div>
+          <div class="tile"><span class="ico"></span><b>Expérience</b>à vivre</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <ol class="notes"><li>Démonstration réelle de Coffret, avec du contenu sous licence : jamais de photos personnelles. Pas d'autoplay avec son.</li><li>Le système de cadeaux est un argument central. Les mots « promesse » et « à remettre » disent la vérité dès l'accueil.</li></ol>
+</section>
+
+<!-- W2 + W3 -->
+<section class="screen">
+  <h2>W2 · Catalogue  —  W3 · Détail d'un template (mobile)</h2>
+  <p>Filtrer, comparer, puis comprendre exactement ce qu'on va personnaliser.</p>
+  <div class="row">
+    <div class="desk" style="width:620px">
+      <div class="bar"><span class="logo">ZAWELI</span><div class="grow"></div><span class="btn p s">Créer une surprise</span></div>
+      <div class="pad">
+        <p class="h">Modèles</p>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin:12px 0 6px"><span class="chip on">Tous</span><span class="chip">Anniversaire</span><span class="chip">Amour</span><span class="chip">Félicitations</span><span class="chip">Remerciements</span></div>
+        <div style="display:flex;gap:6px;margin-bottom:14px"><span class="chip">Gratuit</span><span class="chip">Inclus dans MULTI-USE</span></div>
+        <div class="grid g3">
+          <div><div class="img" style="height:150px">Coffret</div><b>Coffret</b> <span class="badge ok">Gratuit</span><p class="sm">Anniversaire · 6 photos · 3 cadeaux</p></div>
+          <div><div class="img" style="height:150px">à venir</div><b>Modèle B</b> <span class="badge gold">SOLO</span><p class="sm">Amour · 4 photos</p></div>
+          <div><div class="img" style="height:150px">à venir</div><b>Modèle C</b> <span class="badge">Nouveau</span><p class="sm">Félicitations</p></div>
+        </div>
+      </div>
+    </div>
+    <div>
+      <div class="mob"><div class="scr">
+        <div class="bar"><span>←</span><span class="logo">Coffret</span></div>
+        <div class="img" style="height:190px;border-radius:0">Captures · « Voir la démonstration »</div>
+        <div class="pad">
+          <p class="h">Coffret</p>
+          <p class="sm">Un coffret de joaillerie à ouvrir étape par étape : enveloppe scellée, écrin, énigmes, cadeaux, bougie et ballons.</p>
+          <div class="card ann" data-n="1" style="margin-top:12px">
+            <b>Ce que tu vas personnaliser</b>
+            <p class="sm">• Prénom, âge, signature<br>• 6 photos, format portrait<br>• 1 à 3 énigmes<br>• 1 à 3 cadeaux, 5 types<br>• 8 vœux · 1 lettre<br>• Musique (facultative)<br>• Sections facultatives : écrin, énigmes, cadeaux</p>
+          </div>
+          <p class="sm" style="margin-top:10px">Formules : <span class="badge ok">Gratuit</span> <span class="badge gold">SOLO</span> <span class="badge gold">MULTI-USE</span></p>
+        </div>
+        <div class="bottombar"><span class="btn block">Démo</span><span class="btn p block">Créer avec ce modèle</span></div>
+      </div></div>
+    </div>
+  </div>
+  <ol class="notes"><li>Cette liste est générée depuis le manifeste de la version courante : elle ne peut pas mentir sur ce que le modèle permet.</li></ol>
+</section>
+
+<!-- W5 desktop -->
+<section class="screen">
+  <h2>W5 · Assistant de création, ordinateur ★</h2>
+  <p>L'écran central : le formulaire guidé à gauche, l'aperçu réel à droite. Ce n'est pas un éditeur : aucun élément ne se déplace dans l'aperçu.</p>
+  <div class="row">
+    <div class="desk">
+      <div class="bar"><span>←</span><b>Coffret</b><span class="sm">pour Pauline</span><div class="grow"></div><span class="sm ann" data-n="1">✓ Enregistré il y a 3 s</span><span class="btn s">Quitter</span></div>
+      <div class="layout">
+        <div style="width:200px;border-right:1px solid var(--line);padding:14px 10px;background:var(--surface)">
+          <div class="stepper">
+            <div class="step done"><i>✓</i>Pour qui ?</div>
+            <div class="step done"><i>✓</i>L'enveloppe</div>
+            <div class="step cur"><i>3</i>Les énigmes</div>
+            <div class="step warn"><i>!</i>Les cadeaux</div>
+            <div class="step"><i>5</i>Les vœux</div>
+            <div class="step"><i>6</i>La lettre</div>
+            <div class="step"><i>7</i>La musique</div>
+            <div class="step"><i>✔</i>Revue</div>
+          </div>
+        </div>
+        <div style="flex:1;padding:18px;display:flex;flex-direction:column">
+          <p class="h2">Les énigmes</p>
+          <p class="sm">Entre 1 et 3 énigmes. Une bonne réponse révèle une photo. <span class="badge">2/3 énigmes</span></p>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin:10px 0 6px"><b style="font-size:13px">Énigme II</b><label class="sm"><input type="checkbox" checked disabled> Inclure la section énigmes</label></div>
+          <div class="field"><label>Question</label><div class="input ta"><span>Je ne coûte rien et pourtant je vaux tout…</span><span class="sm">96/220</span></div></div>
+          <div class="grid g3" style="gap:8px">
+            <div class="input">○ Un secret</div><div class="input" style="border-color:var(--ok)">● Ton sourire ✓</div><div class="input">○ Un compliment</div>
+          </div>
+          <div class="field" style="margin-top:10px"><label>Indice</label><div class="input">Tu le portes sur presque toutes tes photos.</div></div>
+          <div class="grid g2" style="gap:10px">
+            <div class="field"><label>Photo révélée</label><div class="img" style="height:90px">portrait-03 · ✓ recadrée 2:3</div><div class="input" style="margin-top:6px">Texte alternatif : Pauline, robe fleurie</div></div>
+            <div class="field ann" data-n="2"><label>Message révélé</label><div class="input ta"><span>Ton sourire. Celui qui fait du bien…</span><span class="sm">58/80</span></div><span class="btn s g" style="margin-top:6px">✨ Suggérer</span></div>
+          </div>
+          <div style="margin-top:auto;display:flex;gap:8px"><span class="btn">← Précédent</span><div class="grow"></div><span class="btn">+ Ajouter une énigme</span><span class="btn p">Suivant : les cadeaux →</span></div>
+        </div>
+        <div style="width:320px;border-left:1px solid var(--line);background:var(--fill2);padding:14px" class="ann" data-n="3">
+          <div style="display:flex;gap:6px;justify-content:center;margin-bottom:10px"><span class="chip on">Mobile</span><span class="chip">Ordinateur</span><span class="chip">↻ Rejouer</span></div>
+          <div class="phone"><span style="font-size:13px;color:#f6efe3">Énigme II</span><div style="width:150px;height:200px;background:#f6efe3;border-radius:4px;color:#1a0d0f;font:italic 12px Georgia;padding:10px;text-align:left">Je ne coûte rien et pourtant je vaux tout…<br><br>○ Un secret<br>○ Ton sourire<br>○ Un compliment</div></div>
+          <p class="sm" style="text-align:center">Aperçu réel · /preview dans une iframe</p>
+        </div>
+      </div>
+    </div>
+  </div>
+  <ol class="notes"><li>Enregistrement automatique avec un état visible. Hors ligne : bandeau d'alerte, puis réessai.</li><li>« Suggérer » ouvre le panneau IA : ton, longueur, contexte. La proposition s'affiche à côté du texte et rien n'est remplacé sans clic.</li><li>L'aperçu va directement à la scène de l'étape en cours. Il est en lecture seule.</li></ol>
+</section>
+
+<!-- W5 mobile + W6 -->
+<section class="screen">
+  <h2>W5 · Assistant (mobile)  —  W6 · Étape « Cadeaux »</h2>
+  <p>Sur mobile, une colonne et une barre d'action fixe. Les cadeaux : on choisit d'abord le type, puis on remplit le formulaire de ce type, et un encart dit toujours la vérité.</p>
+  <div class="row">
+    <div class="mob"><div class="scr">
+      <div class="bar"><span>✕</span><b style="font-size:13px">Étape 4 sur 7 · Cadeaux</b><div class="grow"></div><span class="sm">✓</span></div>
+      <div class="gauge" style="border-radius:0"><b style="width:57%"></b></div>
+      <div class="pad">
+        <p class="sm">3 paquets · au moins 1 à remplir</p>
+        <div class="grid g3" style="gap:8px;margin:8px 0 14px">
+          <div class="tile on">Paquet 1<br><b>Argent</b></div><div class="tile">Paquet 2<br><b>Objet</b></div><div class="tile" style="border-style:dashed">Paquet 3<br><span class="sm">vide</span></div>
+        </div>
+        <p class="h2" style="font-size:14px">Paquet 1 · Argent</p>
+        <div class="grid g2" style="gap:8px;margin-top:8px"><div class="field"><label>Montant</label><div class="input">50</div></div><div class="field"><label>Devise</label><div class="input">USD ▾</div></div></div>
+        <div class="field"><label>Comment le recevra-t-elle ?</label><div class="input">Je m'en occupe (mobile money) ▾</div></div>
+        <div class="field"><label>Message</label><div class="input ta">Pour te faire plaisir…</div></div>
+        <div class="note warn ann" data-n="1"><b>C'est une promesse.</b> ZAWELI ne transfère pas d'argent. Pauline verra : « Je t'offre 50 USD… »</div>
+      </div>
+      <div class="bottombar"><span class="btn">←</span><span class="btn block">Aperçu</span><span class="btn p block">Suivant →</span></div>
+    </div></div>
+    <div class="desk" style="width:560px">
+      <div class="pad">
+        <p class="h2">Que contient le paquet 3 ?</p>
+        <div class="grid g5" style="margin:12px 0 16px">
+          <div class="tile"><span class="ico"></span><b>Argent</b>Je t'offre une somme</div>
+          <div class="tile"><span class="ico"></span><b>Objet</b>Un cadeau à remettre</div>
+          <div class="tile on"><span class="ico"></span><b>Invitation</b>Je t'invite…</div>
+          <div class="tile"><span class="ico"></span><b>Bon</b>Un bon pour…</div>
+          <div class="tile"><span class="ico"></span><b>Expérience</b>Un moment à vivre</div>
+        </div>
+        <div class="grid g2" style="gap:10px">
+          <div class="field"><label>Titre *</label><div class="input">Un dîner rien que nous deux</div></div>
+          <div class="field"><label>Lieu *</label><div class="input">Rotana Hotel</div></div>
+          <div class="field"><label>Date *</label><div class="input">14/11/2026</div></div>
+          <div class="field"><label>Heure</label><div class="input">17:00</div></div>
+        </div>
+        <div class="field"><label>Lien de carte (facultatif)</label><div class="input">https://maps…  <span class="badge ok">valide</span></div></div>
+        <div class="card ann" data-n="2" style="background:var(--fill2)"><span class="sm">Aperçu de la carte révélée</span><p class="h2" style="margin-top:6px">Je t'invite</p><p class="sm">Un dîner rien que nous deux · Rotana Hotel · 14 novembre à 17 h</p></div>
+      </div>
+    </div>
+  </div>
+  <ol class="notes"><li>Encart de vérité propre à chaque type (cahier des charges §9.2). Le transfert réel n'est pas proposé (décision C1).</li><li>La carte de révélation par défaut du type. Le paquet et son animation restent ceux du template.</li></ol>
+</section>
+
+<!-- W7 + W8 -->
+<section class="screen">
+  <h2>W7 · Revue et publication  —  W8 · Publication réussie (mobile)</h2>
+  <p>Contrôle serveur, choix explicite de la licence, et ce qui sera consommé dit en clair.</p>
+  <div class="row">
+    <div class="desk" style="width:620px">
+      <div class="pad">
+        <p class="h">Prêt à offrir ?</p>
+        <div class="card" style="margin:12px 0">
+          <p class="sm" style="margin:0 0 6px">Vérification</p>
+          <p style="margin:2px 0">✓ Textes obligatoires</p><p style="margin:2px 0">✓ 6/6 photos</p><p style="margin:2px 0">✓ 3 énigmes</p><p style="margin:2px 0;color:var(--warn)">⚠ Paquet 3 incomplet · <u>compléter</u></p>
+        </div>
+        <div class="grid g2" style="gap:10px">
+          <div class="field"><label>Code d'accès (facultatif)</label><div class="input">••••</div></div>
+          <div class="field"><label>Disponible à partir du</label><div class="input">Immédiatement ▾</div></div>
+        </div>
+        <p class="h2" style="font-size:14px;margin:6px 0 8px">Licence utilisée</p>
+        <div class="card ann" data-n="1" style="border:2px solid var(--primary)"><b>MULTI-USE</b> <span class="badge gold">expire dans 18 j</span><p class="sm" style="margin:4px 0 0">Consomme : 1 création · lie Pauline à cette licence (2/3 destinataires)</p></div>
+        <div class="card" style="margin-top:8px"><b>Création gratuite</b> <span class="badge ok">disponible</span><p class="sm" style="margin:4px 0 0">À choisir explicitement. Utilisable une seule fois.</p></div>
+        <div style="margin-top:14px;display:flex;justify-content:flex-end"><span class="btn p dis ann" data-n="2">Publier</span></div>
+      </div>
+    </div>
+    <div class="mob"><div class="scr">
+      <div class="pad" style="text-align:center;padding-top:40px">
+        <p class="h">C'est prêt.</p>
+        <p class="sm">L'expérience de Pauline est en ligne.</p>
+        <div class="input" style="margin:16px 0 8px"><span>zaweli.app/g/Ab3kZ9qL2x</span><b style="color:var(--primary)">Copier</b></div>
+        <div class="qr"></div>
+        <p class="sm">QR · PNG · SVG</p>
+        <div class="grid g3" style="gap:6px;margin:12px 0"><span class="btn s">WhatsApp</span><span class="btn s">SMS</span><span class="btn s">Autre…</span></div>
+        <div class="note" style="text-align:left">Ouvre-le une fois sur ton téléphone. Le son démarre au premier geste.</div>
+      </div>
+      <div class="bottombar"><span class="btn block">Voir l'expérience</span><span class="btn p block">Tableau de bord</span></div>
+    </div></div>
+  </div>
+  <ol class="notes"><li>Licences compatibles proposées par l'API. Par défaut, celle qui expire en premier. La licence gratuite n'est jamais présélectionnée.</li><li>Désactivé tant qu'un point bloque, puis pendant l'envoi (clé d'idempotence).</li></ol>
+</section>
+
+<!-- Retour paiement -->
+<section class="screen">
+  <h2>W11 · Retour de paiement : les 3 états</h2>
+  <p>La page de retour ne fait que lire le statut. Seul le webhook vérifié active la licence.</p>
+  <div class="row">
+    <div class="mob" style="width:260px"><div class="scr" style="min-height:360px"><div class="pad" style="text-align:center;padding-top:60px"><div style="width:36px;height:36px;border:3px solid var(--fill);border-top-color:var(--primary);border-radius:50%;margin:0 auto 14px"></div><b>Paiement en cours de confirmation…</b><p class="sm">Cela prend généralement quelques secondes. Nous t'enverrons aussi un e-mail.</p><span class="badge info">pending</span></div></div></div>
+    <div class="mob" style="width:260px"><div class="scr" style="min-height:360px"><div class="pad" style="text-align:center;padding-top:60px"><div style="font-size:30px;color:var(--ok)">✓</div><b>Paiement confirmé</b><p class="sm">Licence MULTI-USE active jusqu'au 6 décembre.</p><span class="btn p block">Publier maintenant</span></div></div></div>
+    <div class="mob" style="width:260px"><div class="scr" style="min-height:360px"><div class="pad" style="text-align:center;padding-top:60px"><div style="font-size:30px;color:var(--err)">✕</div><b>Le paiement n'a pas abouti</b><p class="sm">Ton brouillon est intact. Aucun montant n'a été pris en compte.</p><span class="btn p block">Réessayer</span><p class="sm" style="margin-top:8px">Réf. commande 7F3A…</p></div></div></div>
+  </div>
+</section>
+
+<!-- W9 + W10 -->
+<section class="screen">
+  <h2>W9 · Tableau de bord  —  W10 · Mes licences (mobile)</h2>
+  <p>Ce que je peux faire maintenant, ce que je dois reprendre, et ce que j'ai partagé.</p>
+  <div class="row">
+    <div class="desk">
+      <div class="layout">
+        <div class="side">
+          <span class="logo" style="padding:6px 10px 12px">ZAWELI</span>
+          <span class="btn p" style="margin-bottom:10px">+ Nouvelle expérience</span>
+          <div class="it on">Vue d'ensemble</div><div class="it">Mes expériences</div><div class="it">Brouillons</div><div class="it">Destinataires</div><div class="it">Cadeaux</div><div class="it">Licences</div><div class="it">Achats</div><div class="it">Assistant IA</div><div class="it">Paramètres</div>
+        </div>
+        <div style="flex:1;padding:20px">
+          <p class="h">Bonjour</p>
+          <div class="grid g3" style="margin:14px 0">
+            <div class="card ann" data-n="1"><span class="sm">Licence</span><br><b>MULTI-USE</b> <span class="badge gold">18 j</span><p class="sm" style="margin:6px 0 4px">Destinataires 2/3</p><div class="gauge"><b style="width:66%"></b></div></div>
+            <div class="card"><span class="sm">Création gratuite</span><br><b>Disponible</b><p class="sm">1 création offerte</p></div>
+            <div class="card"><span class="sm">Assistant IA</span><br><b>7 / 10</b><div class="gauge" style="margin-top:8px"><b style="width:70%"></b></div></div>
+          </div>
+          <p class="h2" style="margin-bottom:8px">Reprendre</p>
+          <div class="grid g3" style="margin-bottom:16px">
+            <div class="card"><b>Coffret · Marc</b><p class="sm">Étape 4/7 · il y a 2 h</p><div class="gauge"><b style="width:57%"></b></div></div>
+          </div>
+          <p class="h2" style="margin-bottom:8px">Publiées</p>
+          <table class="tbl"><tr><th>Expérience</th><th>Destinataire</th><th>Statut</th><th>Publiée</th><th></th></tr>
+            <tr><td>Coffret</td><td>Pauline</td><td><span class="badge ok">en ligne</span></td><td>6 nov.</td><td><span class="btn s">Copier le lien</span> <span class="btn s">QR</span> <span class="btn s">⋯</span></td></tr>
+            <tr><td>Coffret</td><td>Awa</td><td><span class="badge">désactivée</span></td><td>2 nov.</td><td><span class="btn s">Réactiver</span></td></tr>
+          </table>
+        </div>
+      </div>
+    </div>
+    <div class="mob"><div class="scr">
+      <div class="bar"><b>Mes licences</b></div>
+      <div class="pad" style="display:flex;flex-direction:column;gap:12px">
+        <div class="card"><b>MULTI-USE</b> <span class="badge ok">active</span><p class="sm">Jusqu'au 24 nov. 2026</p>
+          <p class="sm" style="margin:8px 0 2px">Créations : illimitées</p>
+          <p class="sm" style="margin:6px 0 2px">Destinataires 2/3 · Pauline, Marc</p><div class="gauge"><b style="width:66%"></b></div>
+          <p class="sm" style="margin:6px 0 2px">IA 7/10</p><div class="gauge"><b style="width:70%"></b></div>
+          <p class="sm" style="margin-top:8px">Créer ✓ · Modifier ✓ · Publier ✓ · IA ✓</p></div>
+        <div class="card" style="opacity:.85"><b>SOLO</b> <span class="badge">expirée</span><p class="sm">Le 12 oct. 2026</p><div class="note ok ann" data-n="2">Tes expériences publiées restent accessibles.</div><span class="btn g s" style="margin-top:8px">Renouveler</span></div>
+      </div>
+      <div class="tabs"><div>Accueil</div><div>Expériences</div><div class="plus"><span>+</span></div><div class="on">Licences</div><div>Compte</div></div>
+    </div></div>
+  </div>
+  <ol class="notes"><li>Ce que je peux encore faire, en chiffres. Les valeurs affichées sont fictives.</li><li>La distinction des droits est visible : l'accès public survit à l'expiration (cahier des charges §8.5).</li></ol>
+</section>
+
+<!-- W12 -->
+<section class="screen">
+  <h2>W12 · Administration : paramètres d'une formule</h2>
+  <p>Tout est paramétrable. Un avertissement rappelle que les licences vendues gardent leurs règles. Aucune édition du design des templates.</p>
+  <div class="row">
+    <div class="desk">
+      <div class="layout">
+        <div class="side" style="background:#eceef1">
+          <span class="logo" style="padding:6px 10px 12px">ZAWELI <span class="badge" style="background:#475467;color:#fff">Admin</span></span>
+          <div class="it">Templates</div><div class="it on">Formules</div><div class="it">Utilisateurs</div><div class="it">Licences</div><div class="it">Paiements</div><div class="it">Signalements</div><div class="it">Statistiques</div><div class="it">Paramètres</div>
+        </div>
+        <div style="flex:1;padding:20px">
+          <p class="h">Formule · MULTI_USE</p>
+          <div class="note warn ann" data-n="1" style="margin:10px 0 14px">Les modifications s'appliquent aux <b>nouvelles</b> licences. Les 42 licences déjà vendues conservent leurs règles.</div>
+          <div class="grid g3" style="gap:10px">
+            <div class="field"><label>Durée (jours)</label><div class="input">— à définir (C5)</div></div>
+            <div class="field"><label>Démarrage</label><div class="input">À la confirmation du paiement ▾</div></div>
+            <div class="field"><label>Créations max.</label><div class="input">Illimitées</div></div>
+            <div class="field"><label>Destinataires max.</label><div class="input">3</div></div>
+            <div class="field"><label>Quota IA</label><div class="input">— à définir</div></div>
+            <div class="field"><label>Plafond quotidien</label><div class="input">— à définir</div></div>
+            <div class="field"><label>Accès aux templates</label><div class="input">Tous ▾</div></div>
+            <div class="field"><label>Modification après publication</label><div class="input">Pendant la validité ▾</div></div>
+            <div class="field"><label>Statut</label><div class="input">Inactive ▾</div></div>
+          </div>
+          <p class="h2" style="font-size:14px;margin:8px 0">Prix</p>
+          <table class="tbl"><tr><th>Devise</th><th>Montant</th><th>Depuis</th><th>Jusqu'au</th></tr><tr><td>USD</td><td>— à définir</td><td>—</td><td>ouvert</td></tr><tr><td>CDF</td><td>— à définir</td><td>—</td><td>ouvert</td></tr></table>
+          <div style="margin-top:14px;text-align:right"><span class="btn">Annuler</span> <span class="btn p">Enregistrer (journalisé)</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <ol class="notes"><li>Garanti par la base : la licence copie les règles de sa formule (modèle de données §5).</li></ol>
+</section>
+
+</main>
+</body>
+</html>

@@ -1,0 +1,31 @@
+{
+  "name": "zaweli",
+  "private": true,
+  "description": "ZAWELI — plateforme de création et de partage d'expériences numériques personnalisées.",
+  "packageManager": "pnpm@9.12.2",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "typecheck": "turbo run typecheck",
+    "test": "turbo run test",
+    "test:db": "node supabase/tests/migrations.pglite.mjs",
+    "test:e2e": "turbo run test:e2e",
+    "db:start": "supabase start",
+    "db:stop": "supabase stop",
+    "db:reset": "supabase db reset",
+    "db:status": "supabase status",
+    "format": "prettier --write .",
+    "env:local": "node scripts/supabase-env.mjs"
+  },
+  "devDependencies": {
+    "@electric-sql/pglite": "0.5.15",
+    "prettier": "3.9.10",
+    "supabase": "3.0.0",
+    "turbo": "2.11.10",
+    "typescript": "6.0.3"
+  }
+}

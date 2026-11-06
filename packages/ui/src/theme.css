@@ -1,0 +1,19 @@
+/*
+ * Jetons du design system ZAWELI — direction visuelle U1 (PROPOSITION, à valider).
+ * docs/05-maquettes-ux.md §3. Les templates n'utilisent PAS ces jetons.
+ */
+@theme {
+  --color-canvas: #fbf8f3;
+  --color-surface: #ffffff;
+  --color-ink: #1c1416;
+  --color-muted: #6f6669;
+  --color-line: #e4ddd2;
+  --color-primary: #7a0f1e;
+  --color-primary-hover: #5f0b17;
+  --color-gold: #b8862f;
+  --color-success: #1f7a4d;
+  --color-warning: #9a6400;
+  --color-danger: #b42318;
+  --color-info: #1f5fa8;
+  --radius-card: 12px;
+}
