@@ -1,0 +1,181 @@
+/*
+ * Éclat 1.0.0 — styles du template, repris du projet Fifi (app/globals.css).
+ * Isolation : jetons « ec- », règles sous [data-template="eclat"],
+ * animations « ec- », thème Tailwind en mode référence.
+ */
+@import "@fontsource/cormorant-garamond/latin-300.css";
+@import "@fontsource/cormorant-garamond/latin-300-italic.css";
+@import "@fontsource/cormorant-garamond/latin-400.css";
+@import "@fontsource/cormorant-garamond/latin-400-italic.css";
+@import "@fontsource/cormorant-garamond/latin-500.css";
+@import "@fontsource/cormorant-garamond/latin-600.css";
+@import "@fontsource/manrope/latin-300.css";
+@import "@fontsource/manrope/latin-400.css";
+@import "@fontsource/manrope/latin-500.css";
+@import "@fontsource/manrope/latin-600.css";
+@import "@fontsource/pinyon-script/latin-400.css";
+@import "tailwindcss/theme.css" theme(reference);
+@import "tailwindcss/utilities.css" layer(utilities);
+
+@source "./renderer";
+
+@theme {
+  --font-ec-serif: "Cormorant Garamond", Georgia, serif;
+  --font-ec-sans: "Manrope", system-ui, sans-serif;
+  --font-ec-script: "Pinyon Script", cursive;
+
+  --color-ec-ink: #0d0507;
+  --color-ec-night: #140709;
+  --color-ec-wine: #2a0a12;
+  --color-ec-bordeaux: #5c1020;
+  --color-ec-romance: #a3142c;
+  --color-ec-rose: #e6c3bd;
+  --color-ec-blush: #f2ddd7;
+  --color-ec-cream: #f4ece1;
+  --color-ec-ivory: #fbf7f0;
+  --color-ec-paper: #f7f0e4;
+  --color-ec-champagne: #c9a66b;
+  --color-ec-gold: #dcc08c;
+  --color-ec-cocoa: #2b1416;
+  --color-ec-candle: #120b0a;
+}
+
+html:has([data-template="eclat"]) {
+  background: #0d0507;
+}
+
+html.zw-locked,
+html.zw-locked body {
+  overflow: hidden;
+}
+html.lenis,
+html.lenis body {
+  height: auto;
+}
+.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+.lenis.lenis-stopped {
+  overflow: hidden;
+}
+
+[data-template="eclat"] {
+  --gutter: clamp(1rem, 4vw, 3.5rem);
+  background: var(--color-ec-ink);
+  color: var(--color-ec-cream);
+  font-family: var(--font-ec-sans);
+  font-variant-numeric: lining-nums;
+  overflow-x: clip;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+
+  ::selection {
+    background: var(--color-ec-romance);
+    color: var(--color-ec-ivory);
+  }
+
+  /* Grain photographique, très discret */
+  &.grain::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: 80;
+    pointer-events: none;
+    opacity: 0.05;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+  }
+
+  .paper {
+    background-color: var(--color-ec-paper);
+    background-image:
+      radial-gradient(120% 80% at 50% 0%, rgba(255, 255, 255, 0.55), transparent 60%),
+      radial-gradient(100% 100% at 50% 100%, rgba(201, 166, 107, 0.12), transparent 70%);
+  }
+  .cutout {
+    mix-blend-mode: multiply;
+    filter: brightness(1.035);
+  }
+  .text-outline {
+    color: transparent;
+    -webkit-text-stroke: 1px var(--color-ec-champagne);
+  }
+  .eyebrow {
+    font-family: var(--font-ec-sans);
+    font-size: 0.72rem;
+    letter-spacing: 0.32em;
+    text-transform: uppercase;
+  }
+  .split-line {
+    padding-bottom: 0.08em;
+    margin-bottom: -0.08em;
+  }
+
+  .btn-lux {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    transition:
+      color 0.5s cubic-bezier(0.2, 0.8, 0.2, 1),
+      border-color 0.5s,
+      transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+  .btn-lux::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background: var(--btn-fill, var(--color-ec-champagne));
+    transform: translateY(101%);
+    border-radius: inherit;
+    transition: transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+  @media (hover: hover) {
+    .btn-lux:hover::before {
+      transform: translateY(0);
+    }
+    .btn-lux:hover {
+      color: var(--btn-hover-color, var(--color-ec-ink));
+    }
+  }
+  .btn-lux:active {
+    transform: scale(0.97);
+  }
+  .btn-lux:focus-visible,
+  .focus-ring:focus-visible {
+    outline: 2px solid var(--color-ec-gold);
+    outline-offset: 4px;
+  }
+
+  .spin-slow {
+    animation: ec-spin-slow 40s linear infinite;
+  }
+  .soft-pulse {
+    animation: ec-soft-pulse 2.8s ease-in-out infinite;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.001ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.001ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+@keyframes ec-spin-slow {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes ec-soft-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(220, 192, 140, 0.25);
+  }
+  50% {
+    box-shadow: 0 0 0 14px rgba(220, 192, 140, 0);
+  }
+}

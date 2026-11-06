@@ -64,6 +64,26 @@ function fieldSchema(def: FieldDef, mode: ValidationMode): z.ZodType {
         );
       return z.array(riddle).min(publish ? def.min : 0).max(def.max);
     }
+    case "textList":
+      return z
+        .array(z.string().trim().min(1).max(def.maxEach))
+        .min(publish ? def.min : 0)
+        .max(def.max);
+    case "photoList":
+      return z
+        .array(
+          photoValueSchema.extend({
+            alt: z.string().trim().min(1).max(140),
+            caption: z.string().trim().max(def.captionMax).optional(),
+          }),
+        )
+        .min(publish ? def.min : 0)
+        .max(def.max);
+    case "entryList":
+      return z
+        .array(z.strictObject({ title: z.string().trim().min(1).max(def.titleMax), text: z.string().trim().max(def.textMax) }))
+        .min(publish ? def.min : 0)
+        .max(def.max);
   }
 }
 
@@ -74,6 +94,9 @@ function isRequired(def: FieldDef): boolean {
     case "wordList":
     case "giftList":
     case "riddleList":
+    case "textList":
+    case "photoList":
+    case "entryList":
       return def.min > 0;
     default:
       return def.required;

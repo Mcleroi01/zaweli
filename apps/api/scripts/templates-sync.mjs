@@ -15,8 +15,9 @@
 import pg from "pg";
 import { manifestHash, validateManifest } from "@zaweli/template-engine/schema";
 import { manifests as coffret } from "@zaweli/template-coffret";
+import { manifests as eclat } from "@zaweli/template-eclat";
 
-const ALL_MANIFESTS = [...coffret];
+const ALL_MANIFESTS = [...coffret, ...eclat];
 
 if (process.env.NODE_ENV !== "production") {
   try {

@@ -1,0 +1,56 @@
+{
+  "name": "@zaweli/template-eclat",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Template « Éclat » : récit éditorial cinématographique (anniversaire, réussite, galerie, lettre, moment magique).",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./renderer": {
+      "types": "./dist/renderer/index.d.ts",
+      "default": "./dist/renderer/index.js"
+    },
+    "./styles.css": "./src/styles.css"
+  },
+  "files": [
+    "dist",
+    "src/styles.css"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "dev": "tsc -p tsconfig.build.json --watch --preserveWatchOutput",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "lint": "eslint src",
+    "test": "vitest run"
+  },
+  "peerDependencies": {
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "dependencies": {
+    "@fontsource/cormorant-garamond": "^5.3.0",
+    "@fontsource/manrope": "^5.3.0",
+    "@fontsource/pinyon-script": "^5.3.0",
+    "@zaweli/shared-types": "workspace:^",
+    "@zaweli/template-engine": "workspace:^",
+    "gsap": "3.15.1",
+    "lucide-react": "1.70.0"
+  },
+  "devDependencies": {
+    "@types/node": "24",
+    "@types/react": "19",
+    "@types/react-dom": "19",
+    "@zaweli/config": "workspace:^",
+    "eslint": "10.14.0",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
+    "tailwindcss": "4.3.4",
+    "typescript": "6.0.3",
+    "typescript-eslint": "8.72.1",
+    "vite": "8",
+    "vitest": "5.1.0"
+  }
+}

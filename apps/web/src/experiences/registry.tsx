@@ -18,6 +18,7 @@ function Loading() {
  */
 const RENDERERS: Record<string, ComponentType<RendererProps>> = {
   "coffret@1.0.0": dynamic(() => import("./coffret-v1"), { loading: Loading }),
+  "eclat@1.0.0": dynamic(() => import("./eclat-v1"), { loading: Loading }),
 };
 
 export function ExperienceView({ rendererKey, ...props }: RendererProps & { rendererKey: string }) {

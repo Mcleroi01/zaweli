@@ -66,6 +66,15 @@ export type RiddleListField = Base & {
   photo: { required: boolean; ratio: `${number}:${number}` };
 };
 
+/** Liste de paragraphes (ex. les paragraphes d'une lettre). */
+export type TextListField = Base & { kind: "textList"; min: number; max: number; maxEach: number };
+
+/** Liste de photos légendées (ex. une galerie). */
+export type PhotoListField = Base & { kind: "photoList"; min: number; max: number; captionMax: number };
+
+/** Liste d'entrées titre + texte (ex. une frise chronologique). */
+export type EntryListField = Base & { kind: "entryList"; min: number; max: number; titleMax: number; textMax: number };
+
 export type FieldDef =
   | ShortTextField
   | LongTextField
@@ -75,7 +84,10 @@ export type FieldDef =
   | PhotoField
   | WordListField
   | GiftListField
-  | RiddleListField;
+  | RiddleListField
+  | TextListField
+  | PhotoListField
+  | EntryListField;
 
 export type FieldKind = FieldDef["kind"];
 
@@ -152,5 +164,21 @@ export const f = {
     bounds(o.min, o.max, o.label);
     if (o.choices < 2) throw new Error(`${o.label} : au moins 2 propositions`);
     return { kind: "riddleList", ...o };
+  },
+
+  textList(o: { label: string; min: number; max: number; maxEach: number; help?: string }): TextListField {
+    bounds(o.min, o.max, o.label);
+    positive(o.maxEach, `${o.label}.maxEach`);
+    return { kind: "textList", ...o };
+  },
+
+  photoList(o: { label: string; min: number; max: number; captionMax: number; help?: string }): PhotoListField {
+    bounds(o.min, o.max, o.label);
+    return { kind: "photoList", ...o };
+  },
+
+  entryList(o: { label: string; min: number; max: number; titleMax: number; textMax: number; help?: string }): EntryListField {
+    bounds(o.min, o.max, o.label);
+    return { kind: "entryList", ...o };
   },
 };

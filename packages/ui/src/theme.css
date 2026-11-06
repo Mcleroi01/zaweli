@@ -1,19 +1,26 @@
 /*
- * Jetons du design system ZAWELI — direction visuelle U1 (PROPOSITION, à valider).
- * docs/05-maquettes-ux.md §3. Les templates n'utilisent PAS ces jetons.
+ * Jetons du design system ZAWELI (SaaS) — direction U1 affinée.
+ * Papier chaud, encre, bordeaux profond, or retenu. Les templates
+ * n'utilisent PAS ces jetons (ils ont les leurs, préfixés).
  */
 @theme {
-  --color-canvas: #fbf8f3;
-  --color-surface: #ffffff;
-  --color-ink: #1c1416;
-  --color-muted: #6f6669;
-  --color-line: #e4ddd2;
-  --color-primary: #7a0f1e;
-  --color-primary-hover: #5f0b17;
-  --color-gold: #b8862f;
+  --color-canvas: #f6f1e8;
+  --color-paper: #fbf8f2;
+  --color-surface: #fffdf9;
+  --color-ink: #1a1311;
+  --color-muted: #6b605b;
+  --color-line: #e3d9cb;
+  --color-primary: #6d0f1d;
+  --color-primary-hover: #560b17;
+  --color-gold: #a8823f;
+  --color-night: #140d0c;
+  --color-night-soft: #1e1514;
+  --color-night-line: #3a2c29;
+  --color-night-muted: #b9aaa0;
   --color-success: #1f7a4d;
   --color-warning: #9a6400;
   --color-danger: #b42318;
   --color-info: #1f5fa8;
-  --radius-card: 12px;
+  --radius-card: 14px;
+  --ease-out-soft: cubic-bezier(0.2, 0.8, 0.2, 1);
 }

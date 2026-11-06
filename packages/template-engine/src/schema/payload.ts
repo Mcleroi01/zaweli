@@ -25,6 +25,8 @@ export type PublicRiddle = {
   reveal: string;
 };
 
+export type PublicCaptionedPhoto = PublicPhoto & { caption?: string };
+
 export type PublicFieldValue =
   | string
   | number
@@ -32,7 +34,9 @@ export type PublicFieldValue =
   | string[]
   | PublicPhoto
   | PublicRiddle[]
-  | PublicGift[];
+  | PublicGift[]
+  | PublicCaptionedPhoto[]
+  | Array<{ title: string; text: string }>;
 
 export type PublicPayload = {
   schema: 1;
@@ -82,6 +86,11 @@ export async function buildPublicPayload(
       case "photo": {
         const v = value as { mediaId: string; alt: string };
         fields[id] = { ...ctx.resolvePhoto(v.mediaId), alt: v.alt };
+        break;
+      }
+      case "photoList": {
+        const photos = value as Array<{ mediaId: string; alt: string; caption?: string }>;
+        fields[id] = photos.map((v) => ({ ...ctx.resolvePhoto(v.mediaId), alt: v.alt, ...(v.caption ? { caption: v.caption } : {}) }));
         break;
       }
       case "giftList": {
