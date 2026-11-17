@@ -12,7 +12,15 @@ import { reducedMotion, ScrollTrigger, useGSAP, useSmoothScroll } from "@zaweli/
 
 if (typeof window !== "undefined") gsap.registerPlugin(SplitText, ScrollTrigger);
 
-const fontsReady = () => (typeof document !== "undefined" && "fonts" in document ? document.fonts.ready : Promise.resolve());
+/**
+ * Attend les polices, mais jamais plus de 1,5 s : si `document.fonts.ready`
+ * tarde ou ne se résout pas (navigateur, préchargement, réseau), le texte
+ * masqué doit quand même apparaître.
+ */
+const fontsReady = (): Promise<unknown> =>
+  typeof document !== "undefined" && "fonts" in document
+    ? Promise.race([document.fonts.ready, new Promise((resolve) => setTimeout(resolve, 1500))])
+    : Promise.resolve();
 
 /** Défilement doux sur tout le site public. */
 export function SmoothScroll() {
