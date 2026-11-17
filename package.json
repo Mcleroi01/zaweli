@@ -23,6 +23,11 @@
     "templates:sync": "pnpm --filter @zaweli/api templates:sync",
     "demo:seed": "pnpm --filter @zaweli/api demo:seed"
   },
+  "pnpm": {
+    "overrides": {
+      "minimatch@10": "11.0.5"
+    }
+  },
   "devDependencies": {
     "@electric-sql/pglite": "0.5.15",
     "prettier": "3.9.10",
