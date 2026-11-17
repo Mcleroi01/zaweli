@@ -6,14 +6,6 @@ const nextConfig: NextConfig = {
   // Le design system est livré en sources TypeScript.
   transpilePackages: ["@zaweli/ui"],
   poweredByHeader: false,
-  turbopack: {
-    rules: {
-      "*.css": {
-        loaders: ["@tailwindcss/turbopack"],
-        as: "*.css",
-      },
-    },
-  },
   async headers() {
     return [
       {
