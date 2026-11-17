@@ -5,10 +5,12 @@
  * ils accompagnent la lecture et ne la retardent jamais. Tout est désactivé
  * si l'utilisateur préfère réduire les animations.
  */
-import { type ElementType, type ReactNode, useRef } from "react";
+import { type ComponentProps, type ElementType, type MouseEvent, type ReactNode, useEffect, useRef } from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { gsap } from "gsap";
 import { SplitText } from "gsap/SplitText";
-import { reducedMotion, ScrollTrigger, useGSAP, useSmoothScroll } from "@zaweli/template-engine/react";
+import { getLenis, reducedMotion, scrollToElement, ScrollTrigger, useGSAP, useSmoothScroll } from "@zaweli/template-engine/react";
 
 if (typeof window !== "undefined") gsap.registerPlugin(SplitText, ScrollTrigger);
 
@@ -22,10 +24,52 @@ const fontsReady = (): Promise<unknown> =>
     ? Promise.race([document.fonts.ready, new Promise((resolve) => setTimeout(resolve, 1500))])
     : Promise.resolve();
 
-/** Défilement doux sur tout le site public. */
+/**
+ * Défilement doux sur tout le site public.
+ * À chaque changement de page, Lenis est recalé (haut de page, ou ancre #…) :
+ * sinon il garde l'ancienne position et la page saute au premier tour de molette.
+ */
 export function SmoothScroll() {
   useSmoothScroll();
+  const pathname = usePathname();
+  useEffect(() => {
+    const frame = requestAnimationFrame(() => {
+      const lenis = getLenis();
+      lenis?.resize();
+      ScrollTrigger.refresh();
+      const id = decodeURIComponent(window.location.hash.slice(1));
+      const target = id ? document.getElementById(id) : null;
+      if (target) {
+        if (lenis) lenis.scrollTo(target, { immediate: true, force: true });
+        else target.scrollIntoView();
+      } else if (lenis) {
+        lenis.scrollTo(0, { immediate: true, force: true });
+      } else {
+        window.scrollTo(0, 0);
+      }
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [pathname]);
   return null;
+}
+
+/**
+ * Lien du site. Vers une ancre de la page courante (« /#parcours » depuis l'accueil) :
+ * défilement doux jusqu'à la section, au lieu du saut brutal du navigateur.
+ */
+export function SiteLink({ href, onClick, ...props }: ComponentProps<typeof Link> & { href: string }) {
+  const pathname = usePathname();
+  const handle = (e: MouseEvent<HTMLAnchorElement>) => {
+    onClick?.(e);
+    const [path, id] = href.split("#");
+    if (!id || (path || "/") !== pathname) return;
+    const target = document.getElementById(id);
+    if (!target) return;
+    e.preventDefault();
+    history.replaceState(null, "", `#${id}`);
+    scrollToElement(target);
+  };
+  return <Link href={href} onClick={handle} {...props} />;
 }
 
 /**

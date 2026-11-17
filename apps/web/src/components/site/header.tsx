@@ -1,15 +1,22 @@
 "use client";
 
 import Link from "next/link";
+import { SiteLink } from "./motion";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
-const NAV = [
+/** Navigation principale, identique sur toutes les pages du site (Questions vit dans le pied de page). */
+export const NAV = [
   { href: "/modeles", label: "Modèles" },
   { href: "/#parcours", label: "L'expérience" },
   { href: "/tarifs", label: "Tarifs" },
-  { href: "/questions", label: "Questions" },
+  { href: "/a-propos", label: "À propos" },
+  { href: "/contact", label: "Contact" },
 ];
+
+/** Une rubrique est active sur sa page et ses sous-pages (/modeles/coffret allume « Modèles »). */
+const isActive = (pathname: string, href: string) =>
+  !href.includes("#") && (pathname === href || pathname.startsWith(`${href}/`));
 
 export function Wordmark({ className = "" }: { className?: string }) {
   return (
@@ -62,13 +69,14 @@ export function SiteHeader() {
 
         <nav aria-label="Navigation principale" className="hidden items-center gap-9 text-[0.92rem] lg:flex">
           {NAV.map((item) => (
-            <Link
+            <SiteLink
               key={item.href}
               href={item.href}
-              className={`link-draw pb-0.5 ${pathname === item.href ? "text-ink" : "text-ink/70 hover:text-ink"}`}
+              aria-current={isActive(pathname, item.href) ? "page" : undefined}
+              className={`link-draw pb-0.5 ${isActive(pathname, item.href) ? "text-ink" : "text-ink/70 hover:text-ink"}`}
             >
               {item.label}
-            </Link>
+            </SiteLink>
           ))}
         </nav>
 
@@ -99,10 +107,16 @@ export function SiteHeader() {
       >
         <nav aria-label="Navigation mobile" className="flex flex-col px-5 pt-2 pb-8">
           {NAV.map((item, i) => (
-            <Link key={item.href} href={item.href} onClick={() => setOpen(false)} className="flex items-baseline gap-4 border-b border-line py-5">
+            <SiteLink
+              key={item.href}
+              href={item.href}
+              onClick={() => setOpen(false)}
+              aria-current={isActive(pathname, item.href) ? "page" : undefined}
+              className="flex items-baseline gap-4 border-b border-line py-5"
+            >
               <span className="kicker text-muted">0{i + 1}</span>
-              <span className="display text-[2.2rem]">{item.label}</span>
-            </Link>
+              <span className={`display text-[2.2rem] ${isActive(pathname, item.href) ? "text-primary" : ""}`}>{item.label}</span>
+            </SiteLink>
           ))}
           <Link href="/modeles/coffret/demo" onClick={() => setOpen(false)} className="mt-8 inline-flex h-12 items-center justify-center rounded-full bg-ink text-paper">
             Essayer une démo

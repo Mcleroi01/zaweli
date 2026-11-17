@@ -1,5 +1,33 @@
-import Link from "next/link";
+import { SiteLink } from "./motion";
+import { CONTACT, mailto } from "@/content/contact";
 import { Wordmark } from "./header";
+
+const COLUMNS = [
+  {
+    title: "Découvrir",
+    links: [
+      { href: "/modeles", label: "Modèles" },
+      { href: "/#parcours", label: "L'expérience" },
+      { href: "/tarifs", label: "Tarifs" },
+    ],
+  },
+  {
+    title: "Essayer",
+    links: [
+      { href: "/modeles/coffret/demo", label: "Démo Coffret" },
+      { href: "/modeles/eclat/demo", label: "Démo Éclat" },
+    ],
+  },
+  {
+    title: "Zaweli",
+    links: [
+      { href: "/a-propos", label: "À propos" },
+      { href: "/contact", label: "Contact" },
+      { href: "/questions", label: "Questions" },
+      { href: "/status", label: "État des services" },
+    ],
+  },
+];
 
 export function SiteFooter() {
   return (
@@ -11,24 +39,21 @@ export function SiteFooter() {
             <p className="mt-5 max-w-sm text-[0.98rem] leading-relaxed text-night-muted">
               Des expériences numériques à offrir, conçues par un studio, pour célébrer, surprendre ou remercier.
             </p>
+            <a href={mailto(CONTACT.general)} className="link-draw mt-6 inline-block text-[0.98rem]">
+              {CONTACT.general}
+            </a>
           </div>
           <nav aria-label="Pied de page" className="grid grid-cols-2 gap-8 text-[0.95rem] md:col-span-6 md:grid-cols-3">
-            <div className="flex flex-col gap-3">
-              <span className="kicker text-night-muted">Découvrir</span>
-              <Link href="/modeles" className="link-draw w-fit">Modèles</Link>
-              <Link href="/#parcours" className="link-draw w-fit">L&apos;expérience</Link>
-              <Link href="/tarifs" className="link-draw w-fit">Tarifs</Link>
-            </div>
-            <div className="flex flex-col gap-3">
-              <span className="kicker text-night-muted">Essayer</span>
-              <Link href="/modeles/coffret/demo" className="link-draw w-fit">Démo Coffret</Link>
-              <Link href="/modeles/eclat/demo" className="link-draw w-fit">Démo Éclat</Link>
-            </div>
-            <div className="flex flex-col gap-3">
-              <span className="kicker text-night-muted">Aide</span>
-              <Link href="/questions" className="link-draw w-fit">Questions</Link>
-              <Link href="/status" className="link-draw w-fit">État des services</Link>
-            </div>
+            {COLUMNS.map((col) => (
+              <div key={col.title} className="flex flex-col gap-3">
+                <span className="kicker text-night-muted">{col.title}</span>
+                {col.links.map((l) => (
+                  <SiteLink key={l.href} href={l.href} className="link-draw w-fit">
+                    {l.label}
+                  </SiteLink>
+                ))}
+              </div>
+            ))}
           </nav>
         </div>
         <div className="flex flex-col gap-3 pt-8 text-[0.82rem] text-night-muted sm:flex-row sm:justify-between">

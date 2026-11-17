@@ -1,6 +1,23 @@
 {
   "version": "0.0.1",
   "configurations": [
-    { "name": "zaweli-web", "runtimeExecutable": "pnpm", "runtimeArgs": ["--filter", "@zaweli/web", "start"], "port": 3000 }
+    {
+      "name": "zaweli-web",
+      "runtimeExecutable": "cmd",
+      "runtimeArgs": ["/c", "set PATH=%LOCALAPPDATA%\\node24\\node-v24.22.3-win-x64;%PATH% && corepack pnpm exec turbo run dev --filter=@zaweli/web"],
+      "port": 3000
+    },
+    {
+      "name": "zaweli-web-prod",
+      "runtimeExecutable": "cmd",
+      "runtimeArgs": ["/c", "set PATH=%LOCALAPPDATA%\\node24\\node-v24.22.3-win-x64;%PATH% && pnpm --filter @zaweli/web start"],
+      "port": 3000
+    },
+    {
+      "name": "zaweli-api",
+      "runtimeExecutable": "cmd",
+      "runtimeArgs": ["/c", "set PATH=%LOCALAPPDATA%\\node24\\node-v24.22.3-win-x64;%PATH% && corepack pnpm exec turbo run dev --filter=@zaweli/api"],
+      "port": 4000
+    }
   ]
 }
