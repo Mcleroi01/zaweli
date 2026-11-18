@@ -60,7 +60,7 @@ export function SiteHeader() {
     <header
       className={`fixed inset-x-0 top-0 z-50 transition-[transform,background-color,border-color] duration-500 ease-[var(--ease-out-soft)] ${
         hidden && !open ? "-translate-y-full" : "translate-y-0"
-      } ${scrolled || open ? "border-b border-line/80 bg-canvas/90 backdrop-blur-md" : "border-b border-transparent"}`}
+      } ${scrolled || open ? "border-b border-line/80 bg-canvas/[0.97]" : "border-b border-transparent"}`}
     >
       <div className="mx-auto flex h-16 max-w-[84rem] items-center justify-between px-5 sm:px-8 lg:h-20">
         <Link href="/" aria-label="Zaweli, accueil" className="rounded-sm focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary">
