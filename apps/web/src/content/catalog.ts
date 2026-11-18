@@ -1,16 +1,19 @@
+import type { Locale } from "@zaweli/shared-types";
 import { coffretV1 } from "@zaweli/template-coffret";
 import { eclatV1 } from "@zaweli/template-eclat";
 import type { TemplateManifest } from "@zaweli/template-engine/schema";
+import { getDictionary, type StepId, type TemplateSlug } from "@/i18n/dictionaries";
 
 /**
- * Catalogue public. Le texte éditorial est écrit ici ; les caractéristiques
- * (photos, étapes, sections facultatives, cadeaux) sont CALCULÉES à partir
- * du manifeste : le site ne peut pas promettre ce que le modèle ne permet pas.
+ * Catalogue public. Le texte éditorial vient des dictionnaires (une version
+ * par langue) ; les caractéristiques (photos, étapes, sections facultatives,
+ * cadeaux) sont CALCULÉES à partir du manifeste : le site ne peut pas
+ * promettre ce que le modèle ne permet pas.
  */
 export type Screen = { src: string; alt: string };
 
 export type CatalogEntry = {
-  slug: string;
+  slug: TemplateSlug;
   manifest: TemplateManifest;
   name: string;
   tagline: string;
@@ -20,85 +23,81 @@ export type CatalogEntry = {
   tone: { bg: string; ink: string; accent: string };
   cover: Screen;
   screens: Screen[];
-  highlights: Array<{ title: string; text: string }>;
+  highlights: ReadonlyArray<{ title: string; text: string }>;
 };
 
-const GIFT_LABELS: Record<string, string> = {
-  MONEY: "argent (promesse)",
-  PHYSICAL: "objet",
-  INVITATION: "invitation",
-  VOUCHER: "bon cadeau",
-  EXPERIENCE: "expérience",
-};
-
-export const catalog: CatalogEntry[] = [
+/** Partie commune à toutes les langues. Les écrans suivent l'ordre de `screenAlts` des dictionnaires. */
+const TEMPLATES: ReadonlyArray<{ slug: TemplateSlug; manifest: TemplateManifest; tone: CatalogEntry["tone"]; cover: string; screens: readonly string[] }> = [
   {
     slug: "coffret",
     manifest: coffretV1,
-    name: "Coffret",
-    tagline: "Un écrin de joaillerie à ouvrir, étape par étape.",
-    occasion: "Anniversaire",
-    pitch:
-      "Une enveloppe scellée à la cire, un écrin laqué, des énigmes qui retournent leur carte sur une photo, des paquets à déballer, une bougie à souffler et huit ballons qui cachent chacun un vœu. Chaque étape reste secrète tant que la précédente n'est pas ouverte.",
     tone: { bg: "#3a0710", ink: "#f6efe3", accent: "#d9ac55" },
-    cover: { src: "/showcase/coffret-seal.webp", alt: "Coffret : l'enveloppe scellée d'un sceau de cire doré" },
+    cover: "/showcase/coffret-seal.webp",
     screens: [
-      { src: "/showcase/coffret-seal.webp", alt: "L'enveloppe scellée" },
-      { src: "/showcase/coffret-jewel.webp", alt: "L'écrin ouvert sur une photo en arche dorée" },
-      { src: "/showcase/coffret-riddle.webp", alt: "Une énigme retournée sur sa photo" },
-      { src: "/showcase/coffret-gifts.webp", alt: "Trois paquets déballés et leurs cadeaux" },
-      { src: "/showcase/coffret-party.webp", alt: "Le titre « Joyeux anniversaire » et les ballons" },
-      { src: "/showcase/coffret-letter.webp", alt: "La lettre de fin, signée" },
-    ],
-    highlights: [
-      { title: "Un sceau à briser", text: "Le premier geste du destinataire ouvre l'enveloppe et lance le son." },
-      { title: "Des énigmes", text: "Une bonne réponse retourne la carte sur une photo et un mot." },
-      { title: "Des paquets", text: "Chaque paquet contient un vrai cadeau typé, présenté honnêtement." },
-      { title: "Une bougie, huit vœux", text: "On souffle, puis chaque ballon éclaté libère un souhait." },
+      "/showcase/coffret-seal.webp",
+      "/showcase/coffret-jewel.webp",
+      "/showcase/coffret-riddle.webp",
+      "/showcase/coffret-gifts.webp",
+      "/showcase/coffret-party.webp",
+      "/showcase/coffret-letter.webp",
     ],
   },
   {
     slug: "eclat",
     manifest: eclatV1,
-    name: "Éclat",
-    tagline: "Un récit éditorial, comme un film qu'on fait défiler.",
-    occasion: "Anniversaire & réussite",
-    pitch:
-      "Une ouverture en rideau, un portrait sous arche, une réussite racontée avec sa date et sa frise, une galerie qui s'ouvre en grand, une lettre qui se dévoile ligne par ligne, puis un moment magique. Pensé pour célébrer une personne et tout le chemin parcouru.",
     tone: { bg: "#140709", ink: "#f4ece1", accent: "#dcc08c" },
-    cover: { src: "/showcase/eclat-hero.webp", alt: "Éclat : « Joyeux anniversaire, Nadia » et un portrait sous arche" },
+    cover: "/showcase/eclat-hero.webp",
     screens: [
-      { src: "/showcase/eclat-intro.webp", alt: "L'ouverture : une phrase, puis le prénom" },
-      { src: "/showcase/eclat-hero.webp", alt: "Le portrait sous arche" },
-      { src: "/showcase/eclat-achievement.webp", alt: "La réussite et sa date monumentale" },
-      { src: "/showcase/eclat-timeline.webp", alt: "La frise du chemin parcouru" },
-      { src: "/showcase/eclat-letter.webp", alt: "La lettre sur papier ivoire" },
-      { src: "/showcase/eclat-final.webp", alt: "Le final, signé" },
-    ],
-    highlights: [
-      { title: "Une ouverture en rideau", text: "Deux phrases, puis un trait doré qui ouvre la scène." },
-      { title: "Une réussite datée", text: "Un diplôme, une étape, avec sa frise et ses photos." },
-      { title: "Une galerie", text: "Jusqu'à dix photos légendées, à ouvrir en plein écran." },
-      { title: "Une lettre", text: "Elle s'écrit sous les yeux du destinataire, à son rythme." },
+      "/showcase/eclat-intro.webp",
+      "/showcase/eclat-hero.webp",
+      "/showcase/eclat-achievement.webp",
+      "/showcase/eclat-timeline.webp",
+      "/showcase/eclat-letter.webp",
+      "/showcase/eclat-final.webp",
     ],
   },
 ];
 
-export const findTemplate = (slug: string) => catalog.find((t) => t.slug === slug);
+export const TEMPLATE_SLUGS = TEMPLATES.map((t) => t.slug);
 
-/** Caractéristiques lues dans le manifeste. */
-export function specs(manifest: TemplateManifest) {
+export function getCatalog(locale: Locale): CatalogEntry[] {
+  const dict = getDictionary(locale);
+  return TEMPLATES.map((t) => {
+    const copy = dict.catalog[t.slug];
+    return {
+      slug: t.slug,
+      manifest: t.manifest,
+      tone: t.tone,
+      name: copy.name,
+      tagline: copy.tagline,
+      occasion: copy.occasion,
+      pitch: copy.pitch,
+      cover: { src: t.cover, alt: copy.coverAlt },
+      screens: t.screens.map((src, i) => ({ src, alt: copy.screenAlts[i] ?? "" })),
+      highlights: copy.highlights,
+    };
+  });
+}
+
+export const findTemplate = (locale: Locale, slug: string) => getCatalog(locale).find((t) => t.slug === slug);
+
+const isStepId = (id: string, titles: Record<StepId, string>): id is StepId => id in titles;
+
+/** Caractéristiques lues dans le manifeste, formulées dans la langue demandée. */
+export function specs(manifest: TemplateManifest, locale: Locale) {
+  const dict = getDictionary(locale);
   const fields = Object.values(manifest.fields);
   const gift = fields.find((f) => f.kind === "giftList");
   const riddles = fields.find((f) => f.kind === "riddleList");
   return {
-    steps: manifest.steps.map((s) => s.title),
+    // Titre traduit de l'étape ; à défaut (nouvelle étape non traduite), celui du manifeste.
+    steps: manifest.steps.map((s) => (isStepId(s.id, dict.stepTitles) ? dict.stepTitles[s.id] : s.title)),
     maxPhotos: manifest.media.maxPhotos,
     optionalSections: manifest.sections.filter((s) => s.optional).length,
-    riddles: riddles && riddles.kind === "riddleList" ? `${riddles.min} à ${riddles.max}` : null,
+    riddles: riddles && riddles.kind === "riddleList" ? dict.specs.range(riddles.min, riddles.max) : null,
     gifts:
       gift && gift.kind === "giftList"
-        ? { range: `${gift.min} à ${gift.max}`, types: gift.types.map((t) => GIFT_LABELS[t] ?? t) }
+        ? { range: dict.specs.range(gift.min, gift.max), types: gift.types.map((t) => dict.giftLabels[t] ?? t) }
         : null,
     aiFields: fields.filter((f) => "aiAssist" in f && f.aiAssist).length,
     version: manifest.version,

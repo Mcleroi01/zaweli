@@ -14,6 +14,12 @@
       "port": 3000
     },
     {
+      "name": "zaweli-web-prod-3100",
+      "runtimeExecutable": "cmd",
+      "runtimeArgs": ["/c", "set PATH=%LOCALAPPDATA%\\node24\\node-v24.22.3-win-x64;%PATH% && set PORT=3100 && node apps/web/server.mjs"],
+      "port": 3100
+    },
+    {
       "name": "zaweli-api",
       "runtimeExecutable": "cmd",
       "runtimeArgs": ["/c", "set PATH=%LOCALAPPDATA%\\node24\\node-v24.22.3-win-x64;%PATH% && corepack pnpm exec turbo run dev --filter=@zaweli/api"],
