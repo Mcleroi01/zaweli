@@ -6,6 +6,7 @@ import { ImageReveal, Reveal, SplitReveal } from "@/components/site/motion";
 
 export const metadata: Metadata = {
   title: "Modèles",
+  alternates: { canonical: "/modeles" },
   description: "Les modèles d'expériences Zaweli, conçus et animés par un studio. Ouvre leur démonstration.",
 };
 

@@ -4,6 +4,7 @@ import { Reveal, SplitReveal } from "@/components/site/motion";
 
 export const metadata: Metadata = {
   title: "Tarifs",
+  alternates: { canonical: "/tarifs" },
   description: "Les formules Zaweli : une création offerte, puis Solo, Multi-usage et une formule annuelle.",
 };
 

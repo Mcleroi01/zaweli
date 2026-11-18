@@ -84,14 +84,13 @@ export function Journey({ steps }: { steps: JourneyStep[] }) {
               <div className="relative h-full w-full overflow-hidden rounded-[1.9rem] bg-[#2a0509]">
                 {steps.map((step, i) => (
                   <div key={step.screen.src} data-screen className="absolute inset-0 overflow-hidden will-change-[clip-path]" style={{ zIndex: i }}>
-                    {/* Chargées d'avance : un écran ne doit jamais apparaître vide pendant le défilement. */}
+                    {/* Chargement différé par défaut : les écrans sont dans la vue (sous le rideau), ils se chargent dès l'arrivée de la section, et jamais sur mobile où ce bloc est masqué. */}
                     <Image
                       src={step.screen.src}
                       alt={step.screen.alt}
                       fill
                       sizes="360px"
                       priority={i === 0}
-                      loading={i === 0 ? undefined : "eager"}
                       className="object-cover object-top will-change-transform"
                     />
                   </div>

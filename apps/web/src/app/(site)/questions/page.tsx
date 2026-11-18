@@ -3,7 +3,11 @@ import { faq } from "@/content/faq";
 import { FaqList } from "@/components/site/faq-list";
 import { SplitReveal } from "@/components/site/motion";
 
-export const metadata: Metadata = { title: "Questions", description: "Les réponses aux questions fréquentes sur Zaweli." };
+export const metadata: Metadata = {
+  title: "Questions",
+  description: "Les réponses aux questions fréquentes sur Zaweli.",
+  alternates: { canonical: "/questions" },
+};
 
 export default function QuestionsPage() {
   return (

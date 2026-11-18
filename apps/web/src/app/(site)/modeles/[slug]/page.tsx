@@ -12,7 +12,9 @@ export function generateStaticParams() {
 
 export async function generateMetadata({ params }: PageProps<"/modeles/[slug]">): Promise<Metadata> {
   const t = findTemplate((await params).slug);
-  return t ? { title: `${t.name} — ${t.occasion}`, description: t.tagline } : {};
+  return t
+    ? { title: `${t.name} — ${t.occasion}`, description: t.tagline, alternates: { canonical: `/modeles/${t.slug}` } }
+    : {};
 }
 
 export default async function ModelPage({ params }: PageProps<"/modeles/[slug]">) {

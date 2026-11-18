@@ -6,6 +6,9 @@ const nextConfig: NextConfig = {
   // Le design system est livré en sources TypeScript.
   transpilePackages: ["@zaweli/ui"],
   poweredByHeader: false,
+  // Les visuels sont déjà des WebP légers (16 à 47 Ko). L'optimiseur à la demande
+  // saturait l'hébergement mutualisé (réponses 503) : on sert les fichiers tels quels.
+  images: { unoptimized: true },
   async headers() {
     return [
       {

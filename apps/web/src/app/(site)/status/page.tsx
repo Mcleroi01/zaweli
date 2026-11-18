@@ -4,7 +4,7 @@ import { Suspense } from "react";
 import { Badge } from "@zaweli/ui";
 import { fetchHealth } from "@/lib/api";
 
-export const metadata: Metadata = { title: "État des services" };
+export const metadata: Metadata = { title: "État des services", robots: { index: false, follow: false } };
 
 /** Donnée non mise en cache : rendue à la demande dans un Suspense (cacheComponents). */
 async function ApiHealth() {

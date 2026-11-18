@@ -4,6 +4,7 @@ import { Reveal, SplitReveal } from "@/components/site/motion";
 
 export const metadata: Metadata = {
   title: "À propos",
+  alternates: { canonical: "/a-propos" },
   description: "Zaweli conçoit des expériences numériques à offrir : un studio les dessine, tu les personnalises, ton destinataire les ouvre.",
 };
 

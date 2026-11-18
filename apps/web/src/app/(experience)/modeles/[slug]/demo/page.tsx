@@ -22,7 +22,18 @@ export function generateStaticParams() {
   return Object.keys(DEMOS).map((slug) => ({ slug }));
 }
 
-export const metadata: Metadata = { title: "Démonstration" };
+const DEMO_NAMES: Record<string, string> = { coffret: "Coffret", eclat: "Éclat" };
+
+export async function generateMetadata({ params }: PageProps<"/modeles/[slug]/demo">): Promise<Metadata> {
+  const { slug } = await params;
+  const name = DEMO_NAMES[slug];
+  if (!name) return { title: "Démonstration" };
+  return {
+    title: `Démo ${name}`,
+    description: `Ouvre la démonstration du modèle ${name} : exactement ce que verra la personne qui reçoit l'expérience.`,
+    alternates: { canonical: `/modeles/${slug}/demo` },
+  };
+}
 
 export default async function DemoPage({ params }: PageProps<"/modeles/[slug]/demo">) {
   const { slug } = await params;

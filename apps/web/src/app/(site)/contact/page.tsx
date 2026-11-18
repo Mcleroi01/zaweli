@@ -6,6 +6,7 @@ import { CONTACT, mailto } from "@/content/contact";
 
 export const metadata: Metadata = {
   title: "Contact",
+  alternates: { canonical: "/contact" },
   description: "Écrire à Zaweli : une question, de l'aide sur une création, ou une demande d'entreprise.",
 };
 

@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { catalog, specs } from "@/content/catalog";
@@ -47,6 +48,8 @@ const GIFTS = [
   { name: "Une expérience", example: "« Un week-end à deux, au bord du lac. »" },
   { name: "Une somme", example: "« Je t'offre 50 USD », présentée comme une promesse." },
 ];
+
+export const metadata: Metadata = { alternates: { canonical: "/" } };
 
 const OCCASIONS = ["Anniversaire", "Diplôme", "Déclaration", "Remerciements", "Réussite", "Surprise", "Retrouvailles", "Félicitations"];
 
