@@ -6,10 +6,20 @@ import { ApiExceptionFilter } from "./api-exception.filter.js";
 const filter = new ApiExceptionFilter();
 
 describe("ApiExceptionFilter", () => {
-  it("rend une ApiException telle quelle", () => {
-    const { status, body } = filter.toApiError(new ApiException("UNAUTHENTICATED", "Session expirée."));
+  it("rend une ApiException avec le message de son code, en français par défaut", () => {
+    const { status, body } = filter.toApiError(new ApiException("UNAUTHENTICATED"));
     expect(status).toBe(401);
-    expect(body).toEqual({ error: { code: "UNAUTHENTICATED", message: "Session expirée." } });
+    expect(body).toEqual({ error: { code: "UNAUTHENTICATED", message: "Authentification requise." } });
+  });
+
+  it("traduit le message dans la langue demandée, code inchangé", () => {
+    const { body } = filter.toApiError(new ApiException("LICENSE_EXPIRED"), "en");
+    expect(body.error).toEqual({ code: "LICENSE_EXPIRED", message: "This license has expired." });
+  });
+
+  it("garde les détails d'une erreur métier", () => {
+    const { body } = filter.toApiError(new ApiException("EXPERIENCE_CONTENT_INVALID", [{ path: "name" }]));
+    expect(body.error.details).toEqual([{ path: "name" }]);
   });
 
   it("traduit les erreurs métier levées par PostgreSQL", () => {

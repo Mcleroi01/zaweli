@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, type ReactNode, useContext, useMemo } from "react";
+import { DEFAULT_LOCALE, type Locale } from "@zaweli/shared-types";
 import { checkRiddleAnswer, type PublicPayload, type PublicRiddle } from "../schema/payload.js";
 
 /**
@@ -12,6 +13,8 @@ export type ExperienceMode = "live" | "preview" | "demo";
 export type ExperienceRuntime = {
   mode: ExperienceMode;
   payload: PublicPayload;
+  /** Langue des textes fixes du template (français pour les anciens instantanés). */
+  locale: Locale;
   /** Valeur publique d'un champ du manifeste. */
   field: <T>(id: string) => T | undefined;
   isSectionEnabled: (sectionId: string) => boolean;
@@ -33,6 +36,7 @@ export function ExperienceRuntimeProvider({
     () => ({
       mode,
       payload,
+      locale: payload.locale ?? DEFAULT_LOCALE,
       field: <T,>(id: string) => payload.fields[id] as T | undefined,
       isSectionEnabled: (id) => !payload.disabledSections.includes(id),
       checkRiddle: (index, riddle, choice) => checkRiddleAnswer(payload, index, riddle, choice),

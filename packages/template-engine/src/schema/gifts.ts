@@ -7,7 +7,7 @@
  * Aucun template existant n'a besoin d'être modifié.
  */
 import { z } from "zod";
-import { currencySchema, type GiftType } from "@zaweli/shared-types";
+import { currencySchema, DEFAULT_LOCALE, type GiftType, INTL_TAG, type Locale } from "@zaweli/shared-types";
 
 const text = (max: number) => z.string().trim().min(1).max(max);
 const optionalText = (max: number) => z.string().trim().max(max).optional();
@@ -74,17 +74,56 @@ export type PublicGift = {
   [T in GiftType]: { id: string; type: T; status: string; data: GiftData<T> };
 }[GiftType];
 
-const RECEPTION: Record<GiftData<"MONEY">["receptionMode"], string> = {
-  in_person: "Remis en main propre",
-  sender_mobile_money: "Envoyé par mobile money",
-  other: "Modalité convenue ensemble",
+type Wording = {
+  reception: Record<GiftData<"MONEY">["receptionMode"], string>;
+  money: { kicker: string; confirmed: string; promise: string };
+  physical: { kicker: string; handedOver: string };
+  invitation: { kicker: string; at: (time: string) => string; cancelled: string };
+  voucher: { kicker: string; at: (issuer: string) => string; until: (date: string) => string };
+  experience: { kicker: string };
 };
 
-const formatAmount = (amount: number, currency: string) =>
-  `${new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 2 }).format(amount)} ${currency}`;
+/** Formulations de vérité (principe P6), dans chaque langue prise en charge. */
+const WORDING: Record<Locale, Wording> = {
+  fr: {
+    reception: {
+      in_person: "Remis en main propre",
+      sender_mobile_money: "Envoyé par mobile money",
+      other: "Modalité convenue ensemble",
+    },
+    money: {
+      kicker: "Je t'offre",
+      confirmed: "Transfert confirmé.",
+      promise: "Une promesse de l'expéditeur : ce montant n'a pas transité par ZAWELI.",
+    },
+    physical: { kicker: "Un cadeau t'attend", handedOver: "Remis, d'après l'expéditeur." },
+    invitation: { kicker: "Je t'invite", at: (t) => ` à ${t.replace(":", " h ")}`, cancelled: "Cette invitation a été annulée." },
+    voucher: { kicker: "Bon pour", at: (i) => `Chez ${i}`, until: (d) => `Valable jusqu'au ${d}` },
+    experience: { kicker: "Un moment à vivre" },
+  },
+  en: {
+    reception: {
+      in_person: "Handed over in person",
+      sender_mobile_money: "Sent by mobile money",
+      other: "Arranged together",
+    },
+    money: {
+      kicker: "I'm giving you",
+      confirmed: "Transfer confirmed.",
+      promise: "A promise from the sender: this amount did not go through ZAWELI.",
+    },
+    physical: { kicker: "A gift is waiting for you", handedOver: "Handed over, according to the sender." },
+    invitation: { kicker: "You're invited", at: (t) => ` at ${t}`, cancelled: "This invitation has been cancelled." },
+    voucher: { kicker: "Voucher for", at: (i) => `At ${i}`, until: (d) => `Valid until ${d}` },
+    experience: { kicker: "A moment to share" },
+  },
+};
 
-const formatDate = (iso: string) =>
-  new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" }).format(
+const formatAmount = (amount: number, currency: string, locale: Locale) =>
+  `${new Intl.NumberFormat(INTL_TAG[locale], { maximumFractionDigits: 2 }).format(amount)} ${currency}`;
+
+const formatDate = (iso: string, locale: Locale) =>
+  new Intl.DateTimeFormat(INTL_TAG[locale], { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" }).format(
     new Date(`${iso}T00:00:00Z`),
   );
 
@@ -99,56 +138,55 @@ export type GiftDescription = {
 };
 
 /**
- * Formulation du cadeau révélé. Règle P6 : tant que le prestataire n'a rien
- * confirmé, on ne dit JAMAIS « transféré », « payé » ni « livré ».
+ * Formulation du cadeau révélé, dans la langue de l'expérience. Règle P6 :
+ * tant que le prestataire n'a rien confirmé, on ne dit JAMAIS « transféré »,
+ * « payé » ni « livré ».
  */
-export function describeGift(gift: PublicGift): GiftDescription {
+export function describeGift(gift: PublicGift, locale: Locale = DEFAULT_LOCALE): GiftDescription {
+  const w = WORDING[locale];
   switch (gift.type) {
     case "MONEY": {
       const d = gift.data;
       const confirmed = gift.status === "TRANSFERRED";
       return {
-        kicker: "Je t'offre",
-        title: formatAmount(d.amount, d.currency),
-        lines: [RECEPTION[d.receptionMode]],
+        kicker: w.money.kicker,
+        title: formatAmount(d.amount, d.currency, locale),
+        lines: [w.reception[d.receptionMode]],
         message: d.message,
-        note: confirmed ? "Transfert confirmé." : "Une promesse de l'expéditeur : ce montant n'a pas transité par ZAWELI.",
+        note: confirmed ? w.money.confirmed : w.money.promise,
       };
     }
     case "PHYSICAL": {
       const d = gift.data;
       return {
-        kicker: "Un cadeau t'attend",
+        kicker: w.physical.kicker,
         title: d.name,
         lines: [d.description, d.handover].filter((x): x is string => Boolean(x)),
         message: d.message,
-        note: gift.status === "HANDED_OVER" ? "Remis, d'après l'expéditeur." : undefined,
+        note: gift.status === "HANDED_OVER" ? w.physical.handedOver : undefined,
       };
     }
     case "INVITATION": {
       const d = gift.data;
       return {
-        kicker: "Je t'invite",
+        kicker: w.invitation.kicker,
         title: d.title,
-        lines: [
-          `${formatDate(d.date)}${d.time ? ` à ${d.time.replace(":", " h ")}` : ""}`,
-          d.place,
-          d.address,
-          d.practicalInfo,
-        ].filter((x): x is string => Boolean(x)),
+        lines: [`${formatDate(d.date, locale)}${d.time ? w.invitation.at(d.time) : ""}`, d.place, d.address, d.practicalInfo].filter(
+          (x): x is string => Boolean(x),
+        ),
         message: d.message,
-        note: gift.status === "CANCELLED" ? "Cette invitation a été annulée." : undefined,
+        note: gift.status === "CANCELLED" ? w.invitation.cancelled : undefined,
       };
     }
     case "VOUCHER": {
       const d = gift.data;
       return {
-        kicker: "Bon pour",
+        kicker: w.voucher.kicker,
         title: d.title,
         lines: [
           d.value,
-          d.issuer ? `Chez ${d.issuer}` : undefined,
-          d.validUntil ? `Valable jusqu'au ${formatDate(d.validUntil)}` : undefined,
+          d.issuer ? w.voucher.at(d.issuer) : undefined,
+          d.validUntil ? w.voucher.until(formatDate(d.validUntil, locale)) : undefined,
           d.conditions,
         ].filter((x): x is string => Boolean(x)),
         message: d.message,
@@ -157,7 +195,7 @@ export function describeGift(gift: PublicGift): GiftDescription {
     case "EXPERIENCE": {
       const d = gift.data;
       return {
-        kicker: "Un moment à vivre",
+        kicker: w.experience.kicker,
         title: d.title,
         lines: [d.description, d.date, d.place].filter((x): x is string => Boolean(x)),
         message: d.message,

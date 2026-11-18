@@ -1,7 +1,7 @@
 "use client";
 
 import { type MouseEvent, useRef, useState } from "react";
-import { confetti, gsap, reducedMotion, type StageProps, useField, useGSAP } from "@zaweli/template-engine/react";
+import { confetti, gsap, reducedMotion, type StageProps, useField, useGSAP, useRuntime } from "@zaweli/template-engine/react";
 import { describeGift, type PublicGift } from "@zaweli/template-engine/schema";
 import { sound } from "./sound.js";
 import { Continue } from "./ui.js";
@@ -23,6 +23,7 @@ export function Gifts({ onNext, showNext }: StageProps) {
   const root = useRef<HTMLElement>(null);
   const title = useField<string>("giftsTitle");
   const gifts = useField<PublicGift[]>("gifts");
+  const { locale } = useRuntime();
   const [opened, setOpened] = useState<number[]>([]);
   const { contextSafe } = useGSAP({ scope: root });
 
@@ -88,7 +89,7 @@ export function Gifts({ onNext, showNext }: StageProps) {
       <ul className="mt-12 grid w-[min(88vw,380px)] gap-4">
         {opened.map((i) => {
           const gift = gifts[i]!;
-          const d = describeGift(gift);
+          const d = describeGift(gift, locale);
           return (
             <li key={gift.id} data-gift-type={gift.type} className="ticket reveal-in px-7 py-5 text-left">
               <span className="block text-[13px] text-[#8a6a2e] italic">{d.kicker}</span>

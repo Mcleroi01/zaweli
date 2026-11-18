@@ -15,6 +15,8 @@ export const envSchema = z
     DATABASE_URL: z.string().regex(/^postgres(ql)?:\/\//, "URL PostgreSQL attendue"),
     DATABASE_POOL_MAX: z.coerce.number().int().min(1).max(100).default(10),
     SUPABASE_URL: z.url(),
+    /** Adresse publique du site : sert à construire les liens partagés (/g/<lien>). */
+    PUBLIC_WEB_URL: z.url().default("https://zaweli.store"),
     CORS_ORIGINS: z
       .string()
       .default("")

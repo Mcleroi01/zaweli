@@ -20,7 +20,7 @@ type AuthedRequest = Request & { user?: AuthenticatedUser };
 /** Utilisateur authentifié de la requête (garanti par AuthGuard). */
 export const CurrentUser = createParamDecorator((_: unknown, ctx: ExecutionContext): AuthenticatedUser => {
   const user = ctx.switchToHttp().getRequest<AuthedRequest>().user;
-  if (!user) throw new ApiException("UNAUTHENTICATED", "Authentification requise.");
+  if (!user) throw new ApiException("UNAUTHENTICATED");
   return user;
 });
 
@@ -43,13 +43,13 @@ export class AuthGuard implements CanActivate {
     const header = req.headers.authorization ?? "";
     const [scheme, token] = header.split(" ");
     if (scheme?.toLowerCase() !== "bearer" || !token) {
-      throw new ApiException("UNAUTHENTICATED", "Authentification requise.");
+      throw new ApiException("UNAUTHENTICATED");
     }
     try {
       req.user = await this.verifier.verify(token);
       return true;
     } catch {
-      throw new ApiException("UNAUTHENTICATED", "Session invalide ou expirée.");
+      throw new ApiException("UNAUTHENTICATED");
     }
   }
 }

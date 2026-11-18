@@ -9,6 +9,7 @@
  *    obfuscation contre la lecture du code source, pas une protection de
  *    valeur — une énigme qui protège une valeur se valide côté serveur).
  */
+import type { Locale } from "@zaweli/shared-types";
 import type { CompiledContent } from "./compile.js";
 import type { PublicGift } from "./gifts.js";
 import type { TemplateManifest } from "./manifest.js";
@@ -45,6 +46,8 @@ export type PublicPayload = {
   disabledSections: string[];
   /** Sel propre à l'instantané, pour les empreintes de réponses. */
   salt: string;
+  /** Langue des textes fixes du template (absente des anciens instantanés : français). */
+  locale?: Locale;
 };
 
 export async function sha256Hex(input: string): Promise<string> {
@@ -67,6 +70,8 @@ export type PayloadContext = {
   gifts: PublicGift[];
   /** Sel aléatoire, généré une fois par instantané. */
   salt: string;
+  /** Langue choisie par l'expéditeur pour l'expérience. */
+  locale?: Locale;
 };
 
 /** Construit la charge publique. Le contenu DOIT avoir été validé en mode "publish". */
@@ -128,5 +133,12 @@ export async function buildPublicPayload(
     }
   }
 
-  return { schema: 1, rendererKey: manifest.rendererKey, fields, disabledSections: content.disabledSections, salt: ctx.salt };
+  return {
+    schema: 1,
+    rendererKey: manifest.rendererKey,
+    fields,
+    disabledSections: content.disabledSections,
+    salt: ctx.salt,
+    ...(ctx.locale ? { locale: ctx.locale } : {}),
+  };
 }
