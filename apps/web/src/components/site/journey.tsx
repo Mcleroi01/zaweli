@@ -107,7 +107,7 @@ export function Journey({ steps }: { steps: JourneyStep[] }) {
           <li key={step.title} className="grid grid-cols-[1fr_8.5rem] items-center gap-6 sm:grid-cols-[1fr_11rem]">
             <div>
               <span className="kicker text-muted">({String(i + 1).padStart(2, "0")})</span>
-              <h3 className="display mt-2 text-[1.75rem]">{step.title}</h3>
+              <h3 className="display mt-2 text-[1.5rem] sm:text-[1.75rem]">{step.title}</h3>
               <p className="mt-2 text-[0.98rem] leading-relaxed text-muted">{step.text}</p>
             </div>
             <div className="relative aspect-[390/844] rounded-[1.6rem] bg-[#0e0a09] p-1.5 shadow-[0_30px_60px_-30px_rgb(26_19_17/0.5)]">
