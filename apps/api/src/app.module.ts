@@ -2,6 +2,8 @@ import { Module } from "@nestjs/common";
 import { APP_FILTER, APP_GUARD } from "@nestjs/core";
 import { ThrottlerGuard, ThrottlerModule } from "@nestjs/throttler";
 import { AdminController } from "./admin/admin.controller.js";
+import { InsightsController } from "./admin/insights.controller.js";
+import { InsightsService } from "./admin/insights.service.js";
 import { AuthGuard } from "./auth/auth.guard.js";
 import { JwtVerifierService } from "./auth/jwt-verifier.service.js";
 import { RolesGuard } from "./auth/roles.guard.js";
@@ -32,11 +34,13 @@ import { RecipientsController } from "./recipients/recipients.controller.js";
     ExperiencesController,
     PublicExperiencesController,
     AdminController,
+    InsightsController,
   ],
   providers: [
     JwtVerifierService,
     LicensingService,
     ExperiencesService,
+    InsightsService,
     RolesGuard,
     // Ordre : limitation de débit, puis authentification.
     { provide: APP_GUARD, useClass: ThrottlerGuard },

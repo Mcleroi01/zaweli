@@ -3,6 +3,7 @@
  * et réutilisables par les formulaires web) et types des réponses.
  */
 import { z } from "zod";
+import { countryCodeSchema } from "./geo.js";
 import { giftTypeSchema } from "./gifts.js";
 import { localeSchema, translationsSchema, type Locale } from "./i18n.js";
 
@@ -17,6 +18,8 @@ export const updateProfileSchema = z
     displayName: trimmed(1, 80).nullable().optional(),
     locale: localeSchema.optional(),
     marketingOptIn: z.boolean().optional(),
+    /** Pays déclaré par l'utilisateur (ISO 3166-1 alpha-2), ou null pour l'effacer. */
+    countryCode: countryCodeSchema.nullable().optional(),
   })
   .refine((v) => Object.keys(v).length > 0, "au moins un champ");
 export type UpdateProfileRequest = z.infer<typeof updateProfileSchema>;
@@ -28,6 +31,9 @@ export type ProfileResponse = {
   locale: Locale;
   marketingOptIn: boolean;
   emailVerified: boolean;
+  /** Pays du compte : déclaré, ou à défaut déduit de la connexion. */
+  countryCode: string | null;
+  countrySource: "declared" | "detected" | null;
 };
 
 // ---------------------------------------------------------------------

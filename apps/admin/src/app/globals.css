@@ -1,0 +1,128 @@
+@import "tailwindcss";
+
+/*
+ * Espace d'administration : gris ardoise neutre (docs/05 : « ne jamais
+ * confondre avec l'espace client »), clair et sombre.
+ * Couleurs des graphiques : palette de référence validée (daltonisme,
+ * contraste) — trois teintes catégorielles au plus, une rampe séquentielle bleue.
+ */
+@theme {
+  --color-canvas: var(--zw-canvas);
+  --color-surface: var(--zw-surface);
+  --color-raised: var(--zw-raised);
+  --color-ink: var(--zw-ink);
+  --color-ink-2: var(--zw-ink-2);
+  --color-muted: var(--zw-muted);
+  --color-line: var(--zw-line);
+  --color-accent: var(--zw-accent);
+  --color-accent-ink: var(--zw-accent-ink);
+  --color-good: var(--zw-good);
+  --color-bad: var(--zw-bad);
+  --color-warn: var(--zw-warn);
+  --font-sans: var(--font-instrument), system-ui, -apple-system, "Segoe UI", sans-serif;
+  --radius-card: 12px;
+}
+
+:root {
+  color-scheme: light;
+  --zw-canvas: #f3f4f6;
+  --zw-surface: #ffffff;
+  --zw-raised: #f8f9fa;
+  --zw-ink: #0f1720;
+  --zw-ink-2: #3d4651;
+  --zw-muted: #66707c;
+  --zw-line: #e1e4e8;
+  --zw-accent: #1f2a37;
+  --zw-accent-ink: #ffffff;
+  --zw-good: #006300;
+  --zw-bad: #b42318;
+  --zw-warn: #8a5a00;
+
+  /* Graphiques */
+  --chart-surface: #ffffff;
+  --chart-grid: #e1e0d9;
+  --chart-axis: #c3c2b7;
+  --chart-text: #66707c;
+  --series-1: #2a78d6;
+  --series-2: #eb6834;
+  --series-3: #1baf7a;
+  --seq-0: #eef0f2;
+  --seq-1: #cde2fb;
+  --seq-2: #9ec5f4;
+  --seq-3: #6da7ec;
+  --seq-4: #3987e5;
+  --seq-5: #256abf;
+  --seq-6: #184f95;
+  --seq-7: #0d366b;
+  --status-good: #0ca30c;
+  --status-warning: #fab219;
+  --status-serious: #ec835a;
+  --status-critical: #d03b3b;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+    --zw-canvas: #0e1116;
+    --zw-surface: #161a21;
+    --zw-raised: #1c212a;
+    --zw-ink: #eceef1;
+    --zw-ink-2: #c5cad1;
+    --zw-muted: #949ca8;
+    --zw-line: #2a3039;
+    --zw-accent: #e6e9ee;
+    --zw-accent-ink: #0e1116;
+    --zw-good: #3fbf3f;
+    --zw-bad: #f07167;
+    --zw-warn: #f0b429;
+
+    --chart-surface: #161a21;
+    --chart-grid: #2c2c2a;
+    --chart-axis: #383835;
+    --chart-text: #949ca8;
+    --series-1: #3987e5;
+    --series-2: #d95926;
+    --series-3: #199e70;
+    --seq-0: #232830;
+    --seq-1: #0d366b;
+    --seq-2: #104281;
+    --seq-3: #184f95;
+    --seq-4: #256abf;
+    --seq-5: #3987e5;
+    --seq-6: #6da7ec;
+    --seq-7: #9ec5f4;
+  }
+}
+
+html {
+  background: var(--zw-canvas);
+  color: var(--zw-ink);
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Chiffres alignés dans les tableaux et sur les axes. */
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Recharts : texte des axes en encre secondaire, jamais dans la couleur des séries. */
+.recharts-cartesian-axis-tick-value {
+  fill: var(--chart-text);
+  font-size: 12px;
+}
+.recharts-surface:focus,
+.recharts-wrapper:focus,
+.recharts-sector:focus {
+  outline: none;
+}
+
+/* Rafraîchissement : le graphique garde son tracé, atténué (pas de squelette, pas de saut). */
+[data-refreshing="true"] {
+  opacity: 0.55;
+  transition: opacity 200ms;
+}

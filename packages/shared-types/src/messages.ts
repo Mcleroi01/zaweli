@@ -61,6 +61,7 @@ export const ERROR_MESSAGES: Record<Locale, Record<ErrorCode, string>> = {
     GIFT_NOT_PROTECTED: "Ce cadeau n'a rien à révéler.",
     REPORT_NOT_FOUND: "Signalement introuvable.",
     REPORT_ALREADY_HANDLED: "Ce signalement a déjà été traité.",
+    EXCHANGE_RATE_EXISTS: "Un taux existe déjà pour cette devise à cette date. Saisissez-en un à une autre date.",
   },
   en: {
     VALIDATION_FAILED: "The data sent is invalid.",
@@ -115,6 +116,7 @@ export const ERROR_MESSAGES: Record<Locale, Record<ErrorCode, string>> = {
     GIFT_NOT_PROTECTED: "This gift has nothing to reveal.",
     REPORT_NOT_FOUND: "Report not found.",
     REPORT_ALREADY_HANDLED: "This report has already been handled.",
+    EXCHANGE_RATE_EXISTS: "A rate already exists for this currency on this date. Enter one for another date.",
   },
 };
 

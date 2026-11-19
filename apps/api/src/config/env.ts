@@ -17,6 +17,16 @@ export const envSchema = z
     SUPABASE_URL: z.url(),
     /** Adresse publique du site : sert à construire les liens partagés (/g/<lien>). */
     PUBLIC_WEB_URL: z.url().default("https://zaweli.store"),
+    /**
+     * En-tête posé par le CDN avec le pays du visiteur (ISO 3166-1 alpha-2),
+     * utilisé pour PRÉ-REMPLIR le pays d'un compte qui n'en a pas déclaré.
+     * Cloudflare : cf-ipcountry. Vide : aucune détection.
+     */
+    GEO_COUNTRY_HEADER: z
+      .string()
+      .regex(/^[a-z0-9-]*$/i, "nom d'en-tête HTTP attendu")
+      .default("cf-ipcountry")
+      .transform((s) => s.toLowerCase()),
     CORS_ORIGINS: z
       .string()
       .default("")

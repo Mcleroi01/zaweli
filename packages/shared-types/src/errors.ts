@@ -68,6 +68,8 @@ export const ERROR_CODES = [
   // Modération
   "REPORT_NOT_FOUND",
   "REPORT_ALREADY_HANDLED",
+  // Statistiques et finances (administration)
+  "EXCHANGE_RATE_EXISTS",
 ] as const;
 
 export const errorCodeSchema = z.enum(ERROR_CODES);

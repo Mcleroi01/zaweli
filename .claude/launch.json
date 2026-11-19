@@ -20,6 +20,12 @@
       "port": 3100
     },
     {
+      "name": "zaweli-admin-demo",
+      "runtimeExecutable": "cmd",
+      "runtimeArgs": ["/c", "set PATH=%LOCALAPPDATA%\\node24\\node-v24.22.3-win-x64;%PATH% && set NEXT_PUBLIC_ADMIN_DEMO=1&& corepack pnpm --filter @zaweli/admin dev"],
+      "port": 3001
+    },
+    {
       "name": "zaweli-api",
       "runtimeExecutable": "cmd",
       "runtimeArgs": ["/c", "set PATH=%LOCALAPPDATA%\\node24\\node-v24.22.3-win-x64;%PATH% && corepack pnpm exec turbo run dev --filter=@zaweli/api"],

@@ -1,0 +1,42 @@
+{
+  "name": "@zaweli/admin",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Espace d'administration de ZAWELI (admin.zaweli.store) : statistiques mondiales, abonnements, revenus, audit.",
+  "scripts": {
+    "dev": "next dev --port 3001",
+    "build": "next build --webpack",
+    "start": "next start --port 3001",
+    "lint": "eslint",
+    "typecheck": "next typegen && tsc --noEmit"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "2.119.1",
+    "@zaweli/shared-types": "workspace:^",
+    "@zaweli/ui": "workspace:^",
+    "d3-geo": "3.1.2",
+    "i18n-iso-countries": "7.14.0",
+    "next": "16.4.5",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
+    "recharts": "3.11.0",
+    "topojson-client": "3.1.0",
+    "world-atlas": "2.0.2"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "4.3.4",
+    "@types/d3-geo": "3.1.1",
+    "@types/node": "^24.19.2",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "@types/topojson-client": "3.1.5",
+    "@types/topojson-specification": "1.0.5",
+    "eslint": "^9",
+    "eslint-config-next": "16.4.5",
+    "tailwindcss": "^4",
+    "typescript": "^5"
+  },
+  "engines": {
+    "node": ">=22.12.0"
+  }
+}

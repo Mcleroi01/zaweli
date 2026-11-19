@@ -37,6 +37,8 @@ export interface ProfilesTable {
   display_name: string | null;
   locale: ColumnType<"fr" | "en", "fr" | "en" | undefined, "fr" | "en">;
   marketing_opt_in: ColumnType<boolean, boolean | undefined, boolean>;
+  country_code: string | null;
+  country_source: "declared" | "detected" | null;
   created_at: CreatedAt;
   deleted_at: Timestamp | null;
 }
@@ -254,6 +256,35 @@ export interface LicenseConsumptionsTable {
   consumed_at: CreatedAt;
 }
 
+export type OrderStatus = "pending" | "paid" | "failed" | "cancelled" | "expired" | "refunded" | "disputed";
+
+export interface OrdersTable {
+  id: Generated<string>;
+  user_id: string;
+  kind: ColumnType<"license" | "recipient_extension", "license" | "recipient_extension" | undefined, "license" | "recipient_extension">;
+  plan_id: string;
+  plan_price_id: string;
+  amount: Numeric;
+  currency: string;
+  status: ColumnType<OrderStatus, OrderStatus | undefined, OrderStatus>;
+  idempotency_key: string;
+  provider: string;
+  country_code: string | null;
+  created_at: CreatedAt;
+  paid_at: Timestamp | null;
+}
+
+export interface ExchangeRatesTable {
+  id: Generated<string>;
+  currency: string;
+  reference_currency: string;
+  /** numeric(24,10), lu et écrit en texte. */
+  rate: Numeric;
+  valid_from: ColumnType<string, string, never>;
+  created_by: string | null;
+  created_at: CreatedAt;
+}
+
 export interface Database {
   "app.app_settings": AppSettingsTable;
   "app.audit_log": AuditLogTable;
@@ -275,4 +306,6 @@ export interface Database {
   "app.licenses": LicensesTable;
   "app.license_recipients": LicenseRecipientsTable;
   "app.license_consumptions": LicenseConsumptionsTable;
+  "app.orders": OrdersTable;
+  "app.exchange_rates": ExchangeRatesTable;
 }
