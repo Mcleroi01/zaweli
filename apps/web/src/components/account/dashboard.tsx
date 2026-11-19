@@ -1,10 +1,11 @@
 "use client";
 
-import type { ExperienceSummaryResponse, LicenseResponse, Locale, RecipientResponse } from "@zaweli/shared-types";
+import { COUNTRY_CODES, type ExperienceSummaryResponse, type LicenseResponse, type Locale, type RecipientResponse } from "@zaweli/shared-types";
 import Link from "next/link";
-import { type FormEvent, useCallback, useEffect, useState } from "react";
-import { ApiRequestError, getSupabase } from "@/account/client";
+import { type FormEvent, useCallback, useEffect, useMemo, useState } from "react";
+import { ApiRequestError, getSupabase, publicOrigin } from "@/account/client";
 import { useAccount } from "@/account/session";
+import { QrCode } from "./qr-code";
 import { Banner, Button, ButtonLink, Card, EmptyState, Field, formatDate, Gauge, PageTitle, Select, StatusBadge, TextArea, TextInput } from "./ui";
 
 /** Chargement d'une ressource de l'API, avec erreur lisible et rechargement. */
@@ -35,7 +36,7 @@ export function ErrorBanner({ error, onRetry }: { error: string; onRetry?: () =>
   );
 }
 
-export const publicUrl = (slug: string) => `${window.location.origin}/g/${slug}`;
+export const publicUrl = (slug: string) => `${publicOrigin()}/g/${slug}`;
 
 export function CopyButton({ text, label }: { text: string; label: string }) {
   const { t } = useAccount();
@@ -97,6 +98,7 @@ function ExperienceRow({ e, onChanged }: { e: ExperienceSummaryResponse; onChang
   const { t, api, locale, path } = useAccount();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showQr, setShowQr] = useState(false);
   const act = async (work: () => Promise<unknown>) => {
     setBusy(true);
     setError(null);
@@ -130,6 +132,11 @@ function ExperienceRow({ e, onChanged }: { e: ExperienceSummaryResponse; onChang
             </ButtonLink>
           )}
           {e.slug && e.status === "published" && <CopyButton text={publicUrl(e.slug)} label={t.experiences.copyLink} />}
+          {e.slug && e.status === "published" && (
+            <Button variant="quiet" aria-expanded={showQr} onClick={() => setShowQr((v) => !v)}>
+              {t.experiences.qr}
+            </Button>
+          )}
           {e.status === "published" && (
             <Button variant="quiet" disabled={busy} onClick={() => act(() => api.setEnabled(e.id, false))}>
               {t.experiences.disable}
@@ -147,6 +154,11 @@ function ExperienceRow({ e, onChanged }: { e: ExperienceSummaryResponse; onChang
           )}
         </div>
       </div>
+      {showQr && e.slug && e.status === "published" && (
+        <div className="mt-4 rounded-xl border border-line bg-surface p-4">
+          <QrCode url={publicUrl(e.slug)} slug={e.slug} />
+        </div>
+      )}
       {error && (
         <div className="mt-3">
           <Banner tone="danger">{error}</Banner>
@@ -421,18 +433,33 @@ export function LicensesView() {
 // Mon compte
 // ---------------------------------------------------------------------
 
+/** Pays nommés dans la langue choisie et triés selon elle (Intl : aucune liste de noms à maintenir). */
+function countryOptions(locale: Locale) {
+  const names = new Intl.DisplayNames([locale], { type: "region" });
+  return COUNTRY_CODES.map((code) => ({ code, name: names.of(code) ?? code })).sort((a, b) => a.name.localeCompare(b.name, locale));
+}
+
 export function SettingsView() {
   const { t, api, state, refreshProfile, signOut, path } = useAccount();
   const profile = state.kind === "signed-in" ? state.profile : null;
   const [name, setName] = useState(profile?.displayName ?? "");
   const [language, setLanguage] = useState<Locale>(profile?.locale ?? "fr");
+  // Un pays seulement détecté n'est pas un choix : le champ reste « Non précisé » jusqu'à ce que la personne choisisse.
+  const [country, setCountry] = useState(profile?.countrySource === "declared" ? (profile.countryCode ?? "") : "");
+  const countries = useMemo(() => countryOptions(language), [language]);
   const [message, setMessage] = useState<{ tone: "success" | "danger"; text: string } | null>(null);
   const [busy, setBusy] = useState(false);
   const save = async (e: FormEvent) => {
     e.preventDefault();
     setBusy(true);
     try {
-      await api.updateProfile({ displayName: name.trim() || null, locale: language });
+      const declared = profile?.countrySource === "declared" ? (profile.countryCode ?? "") : "";
+      await api.updateProfile({
+        displayName: name.trim() || null,
+        locale: language,
+        // Envoyé seulement s'il change : null efface le choix et laisse l'API déduire le pays de la connexion.
+        ...(country !== declared ? { countryCode: country || null } : {}),
+      });
       await refreshProfile();
       setMessage({ tone: "success", text: t.common.saved });
     } catch (err) {
@@ -462,6 +489,18 @@ export function SettingsView() {
               <Select {...p} value={language} onChange={(e) => setLanguage(e.target.value as Locale)}>
                 <option value="fr">Français</option>
                 <option value="en">English</option>
+              </Select>
+            )}
+          </Field>
+          <Field label={t.settings.country} hint={t.settings.countryHint} optionalLabel={t.common.optional}>
+            {(p) => (
+              <Select {...p} value={country} onChange={(e) => setCountry(e.target.value)}>
+                <option value="">{t.settings.countryUnset}</option>
+                {countries.map((c) => (
+                  <option key={c.code} value={c.code}>
+                    {c.name}
+                  </option>
+                ))}
               </Select>
             )}
           </Field>

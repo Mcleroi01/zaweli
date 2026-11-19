@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { type FormEvent, type ReactNode, useEffect, useState } from "react";
-import { authConfigured, authErrorCode, getSupabase, safeNext } from "@/account/client";
+import { authConfigured, authErrorCode, getSupabase, publicOrigin, safeNext } from "@/account/client";
 import { FullPageStatus, useAccount } from "@/account/session";
 import { Wordmark } from "@/components/site/header";
 import { Banner, Button, Field, PasswordInput, TextInput } from "./ui";
@@ -129,7 +129,7 @@ export function LoginView() {
     } catch (err) {
       const code = authErrorCode(err);
       if (code === "email_not_confirmed") {
-        await getSupabase().auth.resend({ type: "signup", email: email.trim() }).catch(() => undefined);
+        await getSupabase().auth.resend({ type: "signup", email: email.trim(), options: { emailRedirectTo: `${publicOrigin()}${next}` } }).catch(() => undefined);
         router.push(`${path("/verifier")}?email=${encodeURIComponent(email.trim())}&next=${encodeURIComponent(next)}`);
         return;
       }
@@ -210,7 +210,7 @@ export function SignupView() {
         options: {
           // Reprises par le profil (langue, nom) et par l'e-mail du code (langue).
           data: { locale, ...(name.trim() ? { display_name: name.trim() } : {}) },
-          emailRedirectTo: `${window.location.origin}${next}`,
+          emailRedirectTo: `${publicOrigin()}${next}`,
         },
       });
       if (err) throw err;
@@ -291,7 +291,7 @@ function CodeInput({ value, onChange, label }: { value: string; onChange: (v: st
 }
 
 function useResend(email: string, type: "signup" | "recovery") {
-  const { t } = useAccount();
+  const { t, path } = useAccount();
   const [message, setMessage] = useState<{ tone: "success" | "danger"; text: string } | null>(null);
   const [cooldown, setCooldown] = useState(0);
   useEffect(() => {
@@ -302,7 +302,7 @@ function useResend(email: string, type: "signup" | "recovery") {
   const resend = async () => {
     try {
       const client = getSupabase();
-      const { error } = type === "signup" ? await client.auth.resend({ type: "signup", email }) : await client.auth.resetPasswordForEmail(email);
+      const { error } = type === "signup" ? await client.auth.resend({ type: "signup", email, options: { emailRedirectTo: `${publicOrigin()}${path("/espace")}` } }) : await client.auth.resetPasswordForEmail(email, { redirectTo: `${publicOrigin()}${path("/espace")}` });
       if (error) throw error;
       setMessage({ tone: "success", text: t.auth.verify.resent });
       setCooldown(60);
@@ -395,7 +395,7 @@ export function ResetView() {
     setBusy(true);
     setError(null);
     try {
-      const { error: err } = await getSupabase().auth.resetPasswordForEmail(email.trim());
+      const { error: err } = await getSupabase().auth.resetPasswordForEmail(email.trim(), { redirectTo: `${publicOrigin()}${path("/espace")}` });
       if (err) throw err;
       setSent(true);
     } catch (err) {

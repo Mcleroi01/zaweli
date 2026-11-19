@@ -14,12 +14,12 @@ Toutes les pages existent en français (à la racine) et en anglais (sous `/en`)
 | --- | --- | --- |
 | Accès | `/inscription`, `/connexion`, `/verifier`, `/mot-de-passe` | Inscription par e-mail et mot de passe (8 caractères au moins, lettres et chiffres), **confirmée par un code à 6 chiffres** reçu par e-mail. Aussi : connexion par mot de passe, **connexion Google**, et mot de passe oublié avec un code. La destination est conservée : « Créer avec ce modèle » ramène au modèle après la connexion. |
 | Tableau de bord | `/espace` | Licences actives avec leurs jauges, brouillons à reprendre et dernières publications. Un nouvel utilisateur voit « Ta première surprise est offerte ». Un bandeau s'affiche si l'e-mail n'est pas confirmé. |
-| | `/espace/experiences` | Filtres par statut. Actions : continuer, copier le lien, désactiver ou réactiver le lien, supprimer. |
+| | `/espace/experiences` | Filtres par statut. Actions : continuer, copier le lien, **QR code** (PNG ou SVG), désactiver ou réactiver le lien, supprimer. |
 | | `/espace/destinataires` | Ajouter, corriger ou supprimer une fiche. Une fiche liée à une licence est signalée et ne peut pas être supprimée. |
 | | `/espace/licences` | Validité, créations, destinataires liés et aide à l'écriture |
-| | `/espace/compte` | Nom affiché, langue de l'interface et des e-mails, changement de mot de passe, déconnexion |
+| | `/espace/compte` | Nom affiché, langue de l'interface et des e-mails, **pays** (facultatif : sans choix, l'API le déduit de la connexion ; il alimente la carte de l'administration), changement de mot de passe, déconnexion |
 | Création | `/espace/creer`, puis `/espace/creer/[modèle]` | Choix du modèle, « Pour qui ? » (fiche existante ou nouvelle), langue de l'expérience |
-| | `/espace/brouillon/[id]` | **Assistant généré depuis le manifeste** du modèle : étapes avec leur état (✓ ou ⚠), compteurs de caractères, listes bornées, énigmes, scènes facultatives et cadeaux typés avec leur encart de vérité. **Enregistrement automatique**, sans écraser un autre onglet. Puis vérification, choix de la licence (le droit gratuit n'est jamais présélectionné), publication, et partage par copie, partage natif ou WhatsApp. |
+| | `/espace/brouillon/[id]` | **Assistant généré depuis le manifeste** du modèle : étapes avec leur état (✓ ou ⚠), compteurs de caractères, listes bornées, énigmes, scènes facultatives et cadeaux typés avec leur encart de vérité. **Enregistrement automatique**, sans écraser un autre onglet. Puis vérification, choix de la licence (le droit gratuit n'est jamais présélectionné), publication, et partage par copie, partage natif, WhatsApp ou **QR code** téléchargeable en PNG (1024 px) ou en SVG. |
 
 Mise en page (docs/05 §4.2) :
 - sur ordinateur, une barre latérale ;
@@ -69,13 +69,14 @@ Dans le projet Supabase hébergé (tableau de bord) :
    - coller l'ID client et le secret créés dans Google Cloud Console ;
    - y ajouter l'URI de redirection `https://<projet>.supabase.co/auth/v1/callback`.
 4. **Auth → URL Configuration** :
-   - site : `https://zaweli.store` ;
-   - redirections autorisées : `https://zaweli.store/espace`, `https://zaweli.store/en/espace`, et les adresses `…/espace/creer/*`.
+   - site (« Site URL ») : `https://zaweli.store`. C'est l'adresse que Supabase met dans un e-mail quand la redirection demandée n'est pas autorisée : laissée à `http://localhost:3000` (sa valeur par défaut), elle envoie les nouveaux comptes vers localhost ;
+   - redirections autorisées : `https://zaweli.store/**` (espace, `/en/espace`, `…/espace/creer/*`), plus `http://localhost:3000/**` pour le développement.
 5. **Auth → SMTP** : configurer un fournisseur d'e-mails (A12). L'envoi par défaut de Supabase est très limité.
 
 Variables du site (Hostinger, application `zaweli.store`) :
 - `NEXT_PUBLIC_SUPABASE_URL` et `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` : la clé publique ;
 - `NEXT_PUBLIC_API_URL`, par exemple `https://api.zaweli.store`.
+- `NEXT_PUBLIC_SITE_URL` (facultatif) : origine des liens envoyés par e-mail et des liens de partage. En production, `https://zaweli.store` par défaut ; en développement, l'adresse de la page.
 
 Côté API, `CORS_ORIGINS` doit contenir `https://zaweli.store`.
 
@@ -86,6 +87,5 @@ Côté API, `CORS_ORIGINS` doit contenir `https://zaweli.store`.
 | Envoi des photos (recadrage, contrôle du fichier, WebP, suppression des métadonnées EXIF) | Lot « Médias » : il débloque la publication de Coffret et d'Éclat |
 | Aperçu réel du brouillon dans un cadre de téléphone (X3) | Route `/preview/[id]` en iframe, qui rendra le modèle avec le contenu du brouillon |
 | Paiement des formules (MbiyoPay) | Dès réception de la documentation de leur API |
-| QR code du lien | Petite bibliothèque à ajouter à l'écran « C'est prêt » |
 | Aide à l'écriture (bouton « Suggérer ») | Lot IA (OpenRouter) |
 | Mes achats, Mes cadeaux | Après le paiement |

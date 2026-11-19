@@ -24,6 +24,7 @@ import type {
   UpdateProfileRequest,
   UpdateRecipientRequest,
 } from "@zaweli/shared-types";
+import { SITE_URL } from "@/content/site";
 
 /**
  * Configuration publique de l'espace client (intégrée au code livré : aucun secret).
@@ -35,6 +36,14 @@ const SUPABASE_KEY = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? process
 const API_URL = (process.env.NEXT_PUBLIC_API_URL ?? "").replace(/\/+$/, "");
 
 export const authConfigured = Boolean(SUPABASE_URL && SUPABASE_KEY);
+
+/**
+ * Origine des liens qui quittent le navigateur (e-mails de confirmation, liens partagés) :
+ * NEXT_PUBLIC_SITE_URL si elle est fournie, sinon le domaine public en production.
+ * Seul le développement garde l'adresse de la page (localhost).
+ */
+const PUBLIC_ORIGIN = (process.env.NEXT_PUBLIC_SITE_URL ?? (process.env.NODE_ENV === "production" ? SITE_URL : "")).replace(/\/+$/, "");
+export const publicOrigin = () => PUBLIC_ORIGIN || window.location.origin;
 
 let supabase: SupabaseClient | null = null;
 

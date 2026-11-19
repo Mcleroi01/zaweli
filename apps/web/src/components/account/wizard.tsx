@@ -15,6 +15,7 @@ import { ApiRequestError } from "@/account/client";
 import { FullPageStatus, RequireSession, useAccount } from "@/account/session";
 import { templateLabels } from "@/i18n/template-fields";
 import { CopyButton, ErrorBanner, publicUrl } from "./dashboard";
+import { QrCode } from "./qr-code";
 import { Banner, Button, ButtonLink, Card, Field, Select, TextArea, TextInput } from "./ui";
 
 type Fields = Record<string, unknown>;
@@ -662,6 +663,9 @@ function Published({ result }: { result: PublishResponse }) {
           >
             {t.publish.whatsapp}
           </a>
+        </div>
+        <div className="mt-6 border-t border-line pt-6">
+          <QrCode url={url} slug={result.slug} />
         </div>
       </Card>
       <ul className="mt-8 space-y-1 text-[0.92rem] text-muted">
