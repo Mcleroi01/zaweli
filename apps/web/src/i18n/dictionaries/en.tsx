@@ -102,6 +102,7 @@ export const en: Dictionary = {
     mainNav: "Main navigation",
     mobileNav: "Mobile navigation",
     tryDemo: "Try a demo",
+    signIn: "Sign in",
     openMenu: "Open the menu",
     closeMenu: "Close the menu",
   },
@@ -278,6 +279,7 @@ export const en: Dictionary = {
 
   model: {
     allModels: "← All templates",
+    create: "Create with this template",
     fullscreen: "Open full screen",
     orPlay: "or play the demo in the phone →",
     demoTitle: (name) => `Demo of the ${name} template`,

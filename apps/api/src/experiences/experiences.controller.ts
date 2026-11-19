@@ -74,8 +74,8 @@ export class ExperiencesController {
 
   /** Licences capables de couvrir la publication (indicatif : la publication revérifie tout). */
   @Get("experiences/:id/eligibility")
-  eligibility(@CurrentUser() user: AuthenticatedUser, @Param("id", { schema: id }) experienceId: string) {
-    return this.experiences.eligibility(user.id, experienceId);
+  eligibility(@CurrentUser() user: AuthenticatedUser, @RequestLocale() locale: Locale, @Param("id", { schema: id }) experienceId: string) {
+    return this.experiences.eligibility(user.id, experienceId, locale);
   }
 
   @Post("experiences/:id/publish")
@@ -148,7 +148,7 @@ export class ExperiencesController {
 
   /** Mes licences : validité, quotas, destinataires liés, quota IA. */
   @Get("licenses")
-  licenses(@CurrentUser() user: AuthenticatedUser) {
-    return this.licensing.listForUser(user.id);
+  licenses(@CurrentUser() user: AuthenticatedUser, @RequestLocale() locale: Locale) {
+    return this.licensing.listForUser(user.id, locale);
   }
 }

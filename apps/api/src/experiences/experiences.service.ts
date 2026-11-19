@@ -109,9 +109,9 @@ export class ExperiencesService {
     };
   }
 
-  async eligibility(userId: string, id: string) {
+  async eligibility(userId: string, id: string, locale?: Locale) {
     const e = await this.owned(this.db, userId, id);
-    return this.licensing.eligibility(userId, { templateId: e.template_id, recipientId: e.recipient_id });
+    return this.licensing.eligibility(userId, { templateId: e.template_id, recipientId: e.recipient_id }, locale);
   }
 
   // -------------------------------------------------------------------

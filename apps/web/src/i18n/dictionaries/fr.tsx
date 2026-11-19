@@ -134,6 +134,7 @@ export const fr = {
     mainNav: "Navigation principale",
     mobileNav: "Navigation mobile",
     tryDemo: "Essayer une démo",
+    signIn: "Se connecter",
     openMenu: "Ouvrir le menu",
     closeMenu: "Fermer le menu",
   },
@@ -311,6 +312,7 @@ export const fr = {
 
   model: {
     allModels: "← Tous les modèles",
+    create: "Créer avec ce modèle",
     fullscreen: "Ouvrir en plein écran",
     orPlay: "ou joue la démo dans le téléphone →",
     demoTitle: (name: string) => `Démonstration du modèle ${name}`,

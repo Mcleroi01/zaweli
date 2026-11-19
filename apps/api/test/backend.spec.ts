@@ -181,10 +181,26 @@ describe("Deux langues", () => {
     await http().patch("/v1/me/profile").set(as(user)).send({ locale: "de" }).expect(400);
   });
 
+  it("reprend la langue et le nom transmis à l'inscription (e-mail ou Google)", async () => {
+    const id = randomUUID();
+    await pg.query("insert into auth.users (id, email, email_confirmed_at, raw_user_meta_data) values ($1, $2, now(), $3)", [
+      id,
+      `${id}@zaweli.test`,
+      JSON.stringify({ locale: "en", full_name: "Ada Lovelace" }),
+    ]);
+    const res = await http().get("/v1/me/profile").set(as(id)).expect(200);
+    expect(res.body).toMatchObject({ locale: "en", displayName: "Ada Lovelace" });
+
+    const odd = randomUUID();
+    await pg.query("insert into auth.users (id, email, raw_user_meta_data) values ($1, $2, $3)", [odd, `${odd}@zaweli.test`, JSON.stringify({ locale: "xx" })]);
+    expect((await http().get("/v1/me/profile").set(as(odd))).body).toMatchObject({ locale: "fr", displayName: null, emailVerified: false });
+  });
+
   it("détaille un modèle : étapes, sections facultatives, types de cadeaux", async () => {
     const res = await http().get("/v1/catalog/templates/coffret").expect(200);
     expect(res.body.steps[0]).toMatchObject({ id: "recipient" });
     expect(res.body.giftTypes).toContain("VOUCHER");
+    expect(res.body.fields.name).toMatchObject({ kind: "shortText", required: true, max: 24 });
     await http().get("/v1/catalog/templates/inconnu").expect(404);
   });
 });
@@ -223,6 +239,8 @@ describe("Formule gratuite (S1, S2)", () => {
 
     const licenses = await http().get("/v1/licenses").set(as(user)).expect(200);
     expect(licenses.body[0]).toMatchObject({ source: "free", publications: { used: 1, max: 1 } });
+    const english = await http().get("/v1/licenses").set(as(user)).set("accept-language", "en").expect(200);
+    expect(english.body[0].plan).toEqual({ code: "FREE", name: "Free" });
   });
 
   it("S2 : la seconde publication sans licence est refusée, le brouillon est conservé", async () => {

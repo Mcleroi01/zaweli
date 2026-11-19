@@ -6,7 +6,7 @@ import { PeriodFilter } from "@/components/period-filter";
 import { useAdmin } from "@/components/providers";
 import { Card, DataTable, Delta, ErrorState, Loading, MissingRates, Note, PageHeader, StatTile } from "@/components/ui";
 import { ApiRequestError } from "@/lib/api";
-import { formatDateTime, formatDay, formatInt, formatMoney } from "@/lib/format";
+import { formatDateTime, formatDay, formatDayLong, formatInt, formatMoney } from "@/lib/format";
 import { intervalFor, today, toRange } from "@/lib/range";
 import { useData } from "@/lib/use-data";
 
@@ -120,7 +120,7 @@ function ExchangeRates({ onChange }: { onChange: () => void }) {
   const add = (e: FormEvent) => {
     e.preventDefault();
     const code = currency.trim().toUpperCase();
-    void run(() => api.addExchangeRate({ currency: code, rate: rate.trim().replace(",", "."), validFrom }), `Taux ${code} enregistré à partir du ${formatDay(validFrom)}.`);
+    void run(() => api.addExchangeRate({ currency: code, rate: rate.trim().replace(",", "."), validFrom }), `Taux ${code} enregistré, en vigueur à partir du ${formatDayLong(validFrom)}.`);
   };
   const changeRef = (e: FormEvent) => {
     e.preventDefault();

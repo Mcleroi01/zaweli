@@ -68,6 +68,7 @@ export class CatalogController {
       sections: manifest.sections.map((s) => ({ id: s.id, optional: s.optional })),
       maxPhotos: manifest.media.maxPhotos,
       giftTypes: [...giftTypes],
+      fields: manifest.fields as unknown as TemplateDetailResponse["fields"],
     };
   }
 

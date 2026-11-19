@@ -58,6 +58,11 @@ export type TemplateDetailResponse = TemplateSummaryResponse & {
   sections: Array<{ id: string; optional: boolean }>;
   maxPhotos: number;
   giftTypes: string[];
+  /**
+   * Définition de chaque champ (DSL du moteur, `FieldDef` de
+   * @zaweli/template-engine/schema) : le web en génère le formulaire de l'assistant.
+   */
+  fields: Record<string, { kind: string; label: string; help?: string } & Record<string, unknown>>;
 };
 
 export type PlanResponse = {

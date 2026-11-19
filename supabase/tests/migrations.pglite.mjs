@@ -24,7 +24,7 @@ const one = async (sql, params) => (await db.query(sql, params)).rows[0];
 await db.exec(`
   create role anon nologin; create role authenticated nologin; create role service_role nologin;
   create schema auth;
-  create table auth.users (id uuid primary key default gen_random_uuid(), email text, email_confirmed_at timestamptz);
+  create table auth.users (id uuid primary key default gen_random_uuid(), email text, email_confirmed_at timestamptz, raw_user_meta_data jsonb);
   create schema storage;
   create table storage.buckets (id text primary key, name text not null, public boolean default false,
     file_size_limit bigint, allowed_mime_types text[]);

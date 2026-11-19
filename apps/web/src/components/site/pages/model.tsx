@@ -47,8 +47,14 @@ export function ModelPage({ locale, slug }: { locale: Locale; slug: string }) {
               </p>
               <div data-reveal className="mt-10 flex flex-wrap items-center gap-5">
                 <Link
-                  href={href(`/modeles/${t.slug}/demo`)}
+                  href={href(`/espace/creer/${t.slug}`)}
                   className="inline-flex h-13 items-center rounded-full bg-primary px-7 text-[0.98rem] text-paper transition-colors hover:bg-primary-hover"
+                >
+                  {m.create}
+                </Link>
+                <Link
+                  href={href(`/modeles/${t.slug}/demo`)}
+                  className="inline-flex h-13 items-center rounded-full border border-ink/20 px-7 text-[0.98rem] transition-colors hover:border-ink"
                 >
                   {m.fullscreen}
                 </Link>

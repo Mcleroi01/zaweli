@@ -1,5 +1,5 @@
 import { Inject, Injectable } from "@nestjs/common";
-import type { EligibilityResponse, LicenseResponse } from "@zaweli/shared-types";
+import { DEFAULT_LOCALE, type EligibilityResponse, type LicenseResponse, type Locale, translate } from "@zaweli/shared-types";
 import { sql } from "kysely";
 import { DB } from "../database/database.module.js";
 import type { LicensesTable } from "../database/database.types.js";
@@ -22,6 +22,7 @@ type LicenseRow = {
   max_publications_per_day: number;
   plan_code: string;
   plan_name: string;
+  plan_translations: unknown;
 };
 
 export type EligibilityTarget = { templateId: string; recipientId: string };
@@ -53,7 +54,7 @@ export class LicensingService {
   }
 
   /** Licences actives qui couvrent cette publication, triées : celle qui expire en premier d'abord, FREE à part. */
-  async eligibility(userId: string, target: EligibilityTarget): Promise<EligibilityResponse> {
+  async eligibility(userId: string, target: EligibilityTarget, locale: Locale = DEFAULT_LOCALE): Promise<EligibilityResponse> {
     const free = await this.ensureFreeLicense(this.db, userId);
     const licenses = await this.activeLicenses(this.db, userId);
     const tags = await this.templateTags(this.db, target.templateId);
@@ -64,7 +65,7 @@ export class LicensingService {
       candidates.push({
         licenseId: l.id,
         planCode: l.plan_code,
-        planName: l.plan_name,
+        planName: translate(l.plan_translations, locale, "name", l.plan_name),
         source: l.source,
         endsAt: toIso(l.ends_at),
         publicationsLeft: l.publications_max == null ? null : l.publications_max - l.publications_used,
@@ -132,7 +133,7 @@ export class LicensingService {
     }
   }
 
-  async listForUser(userId: string): Promise<LicenseResponse[]> {
+  async listForUser(userId: string, locale: Locale = DEFAULT_LOCALE): Promise<LicenseResponse[]> {
     await this.ensureFreeLicense(this.db, userId);
     const rows = await this.db
       .selectFrom("app.licenses as l")
@@ -150,6 +151,7 @@ export class LicensingService {
         "l.ai_generations_max",
         "p.code",
         "p.name",
+        "p.translations",
       ])
       .where("l.user_id", "=", userId)
       .orderBy("l.created_at", "desc")
@@ -168,7 +170,7 @@ export class LicensingService {
       : [];
     return rows.map((l) => ({
       id: l.id,
-      plan: { code: l.code, name: l.name },
+      plan: { code: l.code, name: translate(l.translations, locale, "name", l.name) },
       source: l.source,
       status: l.status,
       startsAt: toIso(l.starts_at),
@@ -203,6 +205,7 @@ export class LicensingService {
         "l.max_publications_per_day",
         "p.code as plan_code",
         "p.name as plan_name",
+        "p.translations as plan_translations",
       ])
       .where("l.user_id", "=", userId)
       .where("l.status", "=", "active")

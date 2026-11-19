@@ -90,6 +90,9 @@ export function SiteHeader({
 
         <div className="flex items-center gap-3">
           <LocaleSwitch locale={locale} label={languageLabel} names={languageNames} className="text-ink/80" />
+          <Link href={localePath(locale, "/connexion")} className="link-draw hidden pb-0.5 text-[0.92rem] text-ink/80 hover:text-ink sm:inline">
+            {labels.signIn}
+          </Link>
           <Link
             href={demo}
             className="hidden h-10 items-center rounded-full bg-ink px-5 text-[0.88rem] text-paper transition-colors hover:bg-primary sm:inline-flex"
@@ -129,6 +132,13 @@ export function SiteHeader({
           ))}
           <Link href={demo} onClick={() => setOpen(false)} className="mt-8 inline-flex h-12 items-center justify-center rounded-full bg-ink text-paper">
             {labels.tryDemo}
+          </Link>
+          <Link
+            href={localePath(locale, "/connexion")}
+            onClick={() => setOpen(false)}
+            className="mt-3 inline-flex h-12 items-center justify-center rounded-full border border-ink/20"
+          >
+            {labels.signIn}
           </Link>
         </nav>
       </div>
