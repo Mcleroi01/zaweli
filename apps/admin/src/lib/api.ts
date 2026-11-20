@@ -9,6 +9,13 @@ import type {
   AdminOrderRow,
   AdminOverviewResponse,
   AdminPaymentSettingsRequest,
+  AdminPlanRequest,
+  AdminPlanRow,
+  AdminReportRow,
+  AdminSuspendedExperienceRow,
+  AdminTemplateRow,
+  AdminUserDetail,
+  AdminUserRow,
   AdminPaymentSettingsResponse,
   AdminReconcileResponse,
   AdminReferrerRow,
@@ -41,6 +48,24 @@ export interface AdminApi {
   paymentTransfers(status?: string): Promise<AdminTransferRow[]>;
   reconcilePayments(): Promise<AdminReconcileResponse>;
   referrers(): Promise<AdminReferrerRow[]>;
+  // Gestion (docs/16)
+  users(q: string, status: "all" | "suspended"): Promise<AdminUserRow[]>;
+  user(id: string): Promise<AdminUserDetail>;
+  suspendUser(id: string, reason: string): Promise<AdminUserDetail>;
+  unsuspendUser(id: string): Promise<AdminUserDetail>;
+  grantLicense(userId: string, planCode: string, reason: string): Promise<unknown>;
+  revokeLicense(id: string, reason: string): Promise<unknown>;
+  plans(): Promise<AdminPlanRow[]>;
+  createPlan(body: Partial<AdminPlanRequest> & { code: string; name: string }): Promise<unknown>;
+  updatePlan(code: string, body: Partial<Omit<AdminPlanRequest, "code">>): Promise<unknown>;
+  setPrice(code: string, currency: string, amount: string): Promise<unknown>;
+  templates(): Promise<AdminTemplateRow[]>;
+  updateTemplate(slug: string, body: { status?: AdminTemplateRow["status"]; accessTags?: string[]; position?: number }): Promise<unknown>;
+  reports(status: "open" | "dismissed" | "actioned"): Promise<AdminReportRow[]>;
+  resolveReport(id: string, action: "dismiss" | "suspend", resolution: string): Promise<unknown>;
+  suspendedExperiences(): Promise<AdminSuspendedExperienceRow[]>;
+  suspendExperience(id: string, reason: string): Promise<unknown>;
+  unsuspendExperience(id: string): Promise<unknown>;
 }
 
 export class ApiRequestError extends Error {
@@ -57,7 +82,7 @@ type Query = Record<string, string | number | undefined>;
 
 /** Client de l'API réelle : jeton Supabase de la session, messages d'erreur en français. */
 export function createHttpApi(getToken: () => Promise<string | null>): AdminApi {
-  async function call<T>(method: "GET" | "POST" | "PUT", path: string, query?: Query, body?: unknown): Promise<T> {
+  async function call<T>(method: "GET" | "POST" | "PUT" | "PATCH", path: string, query?: Query, body?: unknown): Promise<T> {
     const token = await getToken();
     if (!token) throw new ApiRequestError(401, "UNAUTHENTICATED", "Session expirée : reconnectez-vous.");
     const url = new URL(`${API_URL}/v1${path}`);
@@ -97,5 +122,22 @@ export function createHttpApi(getToken: () => Promise<string | null>): AdminApi 
     paymentTransfers: (status) => call("GET", "/admin/payments/transfers", { status }),
     reconcilePayments: () => call("POST", "/admin/payments/reconcile", undefined, {}),
     referrers: () => call("GET", "/admin/payments/referrers"),
+    users: (q, status) => call("GET", "/admin/users", { q, status }),
+    user: (id) => call("GET", `/admin/users/${id}`),
+    suspendUser: (id, reason) => call("POST", `/admin/users/${id}/suspend`, undefined, { reason }),
+    unsuspendUser: (id) => call("POST", `/admin/users/${id}/unsuspend`, undefined, {}),
+    grantLicense: (userId, planCode, reason) => call("POST", "/admin/licenses", undefined, { userId, planCode, reason }),
+    revokeLicense: (id, reason) => call("POST", `/admin/licenses/${id}/revoke`, undefined, { reason }),
+    plans: () => call("GET", "/admin/plans"),
+    createPlan: (body) => call("POST", "/admin/plans", undefined, body),
+    updatePlan: (code, body) => call("PATCH", `/admin/plans/${code}`, undefined, body),
+    setPrice: (code, currency, amount) => call("POST", `/admin/plans/${code}/prices`, undefined, { currency, amount }),
+    templates: () => call("GET", "/admin/templates"),
+    updateTemplate: (slug, body) => call("PATCH", `/admin/templates/${slug}`, undefined, body),
+    reports: (status) => call("GET", "/admin/reports", { status }),
+    resolveReport: (id, action, resolution) => call("POST", `/admin/reports/${id}/resolve`, undefined, { action, ...(resolution ? { resolution } : {}) }),
+    suspendedExperiences: () => call("GET", "/admin/experiences/suspended"),
+    suspendExperience: (id, reason) => call("POST", `/admin/experiences/${id}/suspend`, undefined, { reason }),
+    unsuspendExperience: (id) => call("POST", `/admin/experiences/${id}/unsuspend`, undefined, {}),
   };
 }

@@ -35,6 +35,10 @@ class FakeAuthAdmin extends AuthAdmin {
   async anonymizeUser(id: string) {
     this.anonymized.push(id);
   }
+  readonly banned = new Map<string, boolean>();
+  async setBanned(id: string, banned: boolean) {
+    this.banned.set(id, banned);
+  }
 }
 
 let app: INestApplication;

@@ -2,12 +2,15 @@ import {
   type CanActivate,
   createParamDecorator,
   type ExecutionContext,
+  Inject,
   Injectable,
   SetMetadata,
 } from "@nestjs/common";
 import { Reflector } from "@nestjs/core";
 import type { Request } from "express";
 import { ApiException } from "../common/api-exception.js";
+import { DB } from "../database/database.module.js";
+import type { Db } from "../database/transaction.js";
 import { type AuthenticatedUser, JwtVerifierService } from "./jwt-verifier.service.js";
 
 const IS_PUBLIC = "zaweli:isPublic";
@@ -33,6 +36,7 @@ export class AuthGuard implements CanActivate {
   constructor(
     private readonly reflector: Reflector,
     private readonly verifier: JwtVerifierService,
+    @Inject(DB) private readonly db: Db,
   ) {}
 
   async canActivate(ctx: ExecutionContext): Promise<boolean> {
@@ -47,9 +51,12 @@ export class AuthGuard implements CanActivate {
     }
     try {
       req.user = await this.verifier.verify(token);
-      return true;
     } catch {
       throw new ApiException("UNAUTHENTICATED");
     }
+    // Compte suspendu par l'administration : même un jeton encore valide est refusé.
+    const profile = await this.db.selectFrom("app.profiles").select("suspended_at").where("id", "=", req.user.id).executeTakeFirst();
+    if (profile?.suspended_at) throw new ApiException("ACCOUNT_SUSPENDED");
+    return true;
   }
 }

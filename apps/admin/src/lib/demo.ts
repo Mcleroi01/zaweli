@@ -189,6 +189,8 @@ function journal(d: Dataset, action: string, entityType: string, entityId: strin
   });
 }
 
+const demoReadOnly = () => new ApiRequestError(409, "CONFLICT", "Démonstration : cette action n'est possible qu'avec l'API réelle.");
+
 const demoPayments: AdminPaymentSettingsResponse = {
   mode: "sandbox",
   webhookUrl: null,
@@ -476,6 +478,24 @@ export function createDemoApi(tz: string): AdminApi {
     paymentTransfers: () => wait([]),
     reconcilePayments: () => wait({ checked: 0, settled: 0 }),
     referrers: () => wait([]),
+    // Gestion : la démonstration ne fabrique ni comptes ni signalements (lecture vide, écritures refusées).
+    users: () => wait([]),
+    user: () => Promise.reject(new ApiRequestError(404, "USER_NOT_FOUND", "Démonstration : aucun compte réel.")),
+    suspendUser: () => Promise.reject(demoReadOnly()),
+    unsuspendUser: () => Promise.reject(demoReadOnly()),
+    grantLicense: () => Promise.reject(demoReadOnly()),
+    revokeLicense: () => Promise.reject(demoReadOnly()),
+    plans: () => wait([]),
+    createPlan: () => Promise.reject(demoReadOnly()),
+    updatePlan: () => Promise.reject(demoReadOnly()),
+    setPrice: () => Promise.reject(demoReadOnly()),
+    templates: () => wait([]),
+    updateTemplate: () => Promise.reject(demoReadOnly()),
+    reports: () => wait([]),
+    resolveReport: () => Promise.reject(demoReadOnly()),
+    suspendedExperiences: () => wait([]),
+    suspendExperience: () => Promise.reject(demoReadOnly()),
+    unsuspendExperience: () => Promise.reject(demoReadOnly()),
   };
 
   function createDemoApiFor(d: Dataset) {

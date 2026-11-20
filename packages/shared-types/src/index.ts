@@ -11,3 +11,4 @@ export * from "./music.js";
 export * from "./referrals.js";
 export * from "./media.js";
 export * from "./ai.js";
+export * from "./admin-management.js";

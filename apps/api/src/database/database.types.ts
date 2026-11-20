@@ -42,6 +42,8 @@ export interface ProfilesTable {
   country_source: "declared" | "detected" | null;
   referral_code: string | null;
   notify_license_expiry: ColumnType<boolean, boolean | undefined, boolean>;
+  suspended_at: Timestamp | null;
+  suspension_reason: string | null;
   created_at: CreatedAt;
   deleted_at: Timestamp | null;
 }
@@ -86,6 +88,7 @@ export interface TemplateVersionsTable {
   renderer_key: string;
   manifest: Json;
   status: CatalogStatus;
+  published_at: Timestamp | null;
 }
 
 export interface TemplateAccessTagsTable {

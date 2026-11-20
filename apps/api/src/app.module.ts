@@ -7,6 +7,7 @@ import { AiProvider, OpenRouterProvider } from "./ai/ai.provider.js";
 import { AiService } from "./ai/ai.service.js";
 import { InsightsController } from "./admin/insights.controller.js";
 import { InsightsService } from "./admin/insights.service.js";
+import { ManagementController } from "./admin/management.controller.js";
 import { PaymentsAdminController } from "./admin/payments-admin.controller.js";
 import { AuthGuard } from "./auth/auth.guard.js";
 import { JwtVerifierService } from "./auth/jwt-verifier.service.js";
@@ -61,6 +62,7 @@ import { RecipientsController } from "./recipients/recipients.controller.js";
     MediaController,
     AiController,
     PaymentsAdminController,
+    ManagementController,
   ],
   providers: [
     JwtVerifierService,

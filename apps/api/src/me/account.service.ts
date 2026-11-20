@@ -12,6 +12,8 @@ export abstract class AuthAdmin {
   abstract deleteUser(userId: string): Promise<void>;
   /** Compte gardé pour les pièces comptables : adresse remplacée, connexion bloquée. */
   abstract anonymizeUser(userId: string): Promise<void>;
+  /** Suspension par l'administration : plus de nouvelle session ; levée possible. */
+  abstract setBanned(userId: string, banned: boolean): Promise<void>;
 }
 
 @Injectable()
@@ -26,6 +28,9 @@ export class SupabaseAuthAdmin extends AuthAdmin {
   }
   async anonymizeUser(userId: string) {
     await this.call("PUT", userId, { email: `supprime-${userId}@comptes-supprimes.zaweli.store`, user_metadata: {}, ban_duration: "876000h" });
+  }
+  async setBanned(userId: string, banned: boolean) {
+    await this.call("PUT", userId, { ban_duration: banned ? "876000h" : "none" });
   }
   private async call(method: "DELETE" | "PUT", userId: string, body?: unknown) {
     const key = this.env.SUPABASE_SECRET_KEY!;
