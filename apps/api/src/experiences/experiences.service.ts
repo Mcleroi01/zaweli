@@ -1,9 +1,10 @@
-import { randomBytes } from "node:crypto";
+import { randomBytes, scryptSync, timingSafeEqual } from "node:crypto";
 import { Inject, Injectable } from "@nestjs/common";
 import type {
   CreateExperienceRequest,
   CreateGiftRequest,
   ExperienceDetailResponse,
+  ExperienceSettingsRequest,
   ExperienceStatus,
   ExperienceSummaryResponse,
   GiftResponse,
@@ -20,6 +21,7 @@ import {
   giftDataSchemas,
   giftProtectedSchemas,
   type PublicGift,
+  type PublicPayload,
   type TemplateManifest,
 } from "@zaweli/template-engine/schema";
 import { sql } from "kysely";
@@ -29,6 +31,7 @@ import { ENV, type Env } from "../config/env.js";
 import { DB } from "../database/database.module.js";
 import { audit, type Db, inTransaction, readSetting, type Tx, toIso } from "../database/transaction.js";
 import { LicensingService } from "../licensing/licensing.service.js";
+import { MediaService } from "../media/media.service.js";
 
 type Ctx = { userId: string; requestId: string | null };
 
@@ -69,6 +72,7 @@ export class ExperiencesService {
     @Inject(DB) private readonly db: Db,
     @Inject(ENV) private readonly env: Env,
     private readonly licensing: LicensingService,
+    private readonly media: MediaService,
   ) {}
 
   // -------------------------------------------------------------------
@@ -84,7 +88,7 @@ export class ExperiencesService {
 
   async detail(userId: string, id: string, db: Db | Tx = this.db): Promise<ExperienceDetailResponse> {
     const row = await this.summaryQuery(db)
-      .select(["e.content", "e.disabled_sections", "e.current_snapshot_id", "v.manifest"])
+      .select(["e.content", "e.disabled_sections", "e.current_snapshot_id", "v.manifest", "e.access_code_hash", "e.available_from", "e.music"])
       .where("e.id", "=", id)
       .where("e.owner_id", "=", userId)
       .where("e.status", "<>", "deleted")
@@ -102,11 +106,162 @@ export class ExperiencesService {
     return {
       ...this.toSummary(row),
       content,
+      hasAccessCode: Boolean(row.access_code_hash),
+      availableFrom: toIso(row.available_from),
+      music: (row.music as ExperienceDetailResponse["music"]) ?? null,
       gifts: gifts.map((g) => this.toGift(g)),
       publishIssues,
       hasUnpublishedChanges: row.status !== "draft" && snapshot?.revision !== row.content_revision,
       canEdit: await this.licensing.canEdit(db, row),
     };
+  }
+
+  /**
+   * Réglages d'ouverture (§7.6) et musique : code demandé au destinataire
+   * (seule son empreinte est gardée), date d'ouverture du lien, musique.
+   * Ils s'appliquent tout de suite, sans republier.
+   */
+  async settings(ctx: Ctx, id: string, body: ExperienceSettingsRequest): Promise<ExperienceDetailResponse> {
+    await inTransaction(this.db, "user", ctx.userId, async (trx) => {
+      await this.lock(trx, ctx.userId, id);
+      await trx
+        .updateTable("app.experiences")
+        .set({
+          ...(body.accessCode !== undefined ? { access_code_hash: body.accessCode === null ? null : hashAccessCode(body.accessCode) } : {}),
+          ...(body.availableFrom !== undefined ? { available_from: body.availableFrom === null ? null : new Date(body.availableFrom) } : {}),
+          ...(body.music !== undefined ? { music: body.music === null ? null : JSON.stringify(body.music) } : {}),
+        })
+        .where("id", "=", id)
+        .execute();
+      await audit(trx, {
+        actorType: "user",
+        actorId: ctx.userId,
+        action: "experience.settings_updated",
+        entityType: "experience",
+        entityId: id,
+        // Jamais le code lui-même dans le journal.
+        data: {
+          accessCode: body.accessCode === undefined ? undefined : body.accessCode === null ? "removed" : "set",
+          availableFrom: body.availableFrom,
+          music: body.music === undefined ? undefined : (body.music?.trackId ?? null),
+        },
+        requestId: ctx.requestId,
+      });
+    });
+    return this.detail(ctx.userId, id);
+  }
+
+  /**
+   * Dupliquer pour une autre personne (§7.4) : même modèle et même version,
+   * même contenu et mêmes photos, mêmes cadeaux sauf l'argent (un cadeau
+   * d'argent se paie pour une personne précise). Nouveau brouillon.
+   */
+  async duplicate(ctx: Ctx, id: string, recipientId: string): Promise<ExperienceDetailResponse> {
+    const newId = await inTransaction(this.db, "user", ctx.userId, async (trx) => {
+      const source = await this.owned(trx, ctx.userId, id);
+      await this.ownedRecipient(trx, ctx.userId, recipientId);
+      await sql`select pg_advisory_xact_lock(hashtext(${`drafts:${ctx.userId}`}))`.execute(trx);
+      const max = Number(await readSetting(trx, "drafts.max_active", 5));
+      const { drafts } = await trx
+        .selectFrom("app.experiences")
+        .select((eb) => eb.fn.countAll<number>().as("drafts"))
+        .where("owner_id", "=", ctx.userId)
+        .where("status", "=", "draft")
+        .executeTakeFirstOrThrow();
+      if (Number(drafts) >= max) throw new ApiException("DRAFT_LIMIT_REACHED", { max });
+
+      const manifest = await this.manifest(trx, source.template_version_id);
+      const music = await trx.selectFrom("app.experiences").select("music").where("id", "=", id).executeTakeFirstOrThrow();
+      const row = await trx
+        .insertInto("app.experiences")
+        .values({
+          owner_id: ctx.userId,
+          template_id: source.template_id,
+          template_version_id: source.template_version_id,
+          recipient_id: recipientId,
+          title: null,
+          locale: source.locale,
+          content: JSON.stringify({ fields: {} }),
+          disabled_sections: source.disabled_sections,
+          music: music.music ? JSON.stringify(music.music) : null,
+        })
+        .returning("id")
+        .executeTakeFirstOrThrow();
+
+      // Cadeaux recopiés (hors argent), puis listes de cadeaux réécrites avec les nouveaux identifiants.
+      const fields: Record<string, unknown> = { ...source.content.fields };
+      const mapping = new Map<string, string>();
+      for (const g of await this.gifts(trx, id)) {
+        if (g.gift_type === "MONEY") continue;
+        const copy = await trx
+          .insertInto("app.gifts")
+          .values({
+            owner_id: ctx.userId,
+            experience_id: row.id,
+            position: g.position,
+            gift_type: g.gift_type,
+            status: "ANNOUNCED",
+            data: JSON.stringify(g.data),
+            protected_data: JSON.stringify(g.protected_data ?? {}),
+          })
+          .returning("id")
+          .executeTakeFirstOrThrow();
+        mapping.set(g.id, copy.id);
+      }
+      for (const [fieldId] of this.giftLists(manifest)) {
+        const ids = (fields[fieldId] as string[] | undefined) ?? [];
+        fields[fieldId] = ids.map((g) => mapping.get(g)).filter((g): g is string => Boolean(g));
+      }
+      await trx.updateTable("app.experiences").set({ content: JSON.stringify({ fields }) }).where("id", "=", row.id).execute();
+      await audit(trx, {
+        actorType: "user",
+        actorId: ctx.userId,
+        action: "experience.duplicated",
+        entityType: "experience",
+        entityId: row.id,
+        data: { from: id },
+        requestId: ctx.requestId,
+      });
+      return row.id;
+    });
+    return this.detail(ctx.userId, newId);
+  }
+
+  /**
+   * Aperçu du brouillon (§7.5) : la même charge que la publication, mais avec
+   * le contenu en cours, les photos en adresses temporaires et sans rien
+   * consommer. Les éléments manquants sont simplement absents ; le site
+   * complète avec l'exemple du modèle.
+   */
+  async preview(userId: string, id: string): Promise<{ rendererKey: string; payload: PublicPayload }> {
+    const e = await this.owned(this.db, userId, id);
+    const manifest = await this.manifest(this.db, e.template_version_id);
+    const parsed = compileContentSchema(manifest, "draft").safeParse({ fields: e.content.fields ?? {}, disabledSections: e.disabled_sections });
+    if (!parsed.success) throw new ApiException("EXPERIENCE_CONTENT_INVALID", issuesOf(parsed.error));
+    const content = structuredClone(parsed.data) as { fields: Record<string, unknown>; disabledSections: string[] };
+    const photos = await this.media.previewPhotos(userId, this.mediaIdsIn(manifest, content.fields));
+    const gifts = await this.gifts(this.db, id);
+    const known = new Set(gifts.map((g) => g.id));
+    // Retire ce qui n'est pas encore prêt (photo en traitement, cadeau supprimé) plutôt que d'échouer.
+    for (const [fieldId, def] of Object.entries(manifest.fields)) {
+      const value = content.fields[fieldId];
+      if (value === undefined) continue;
+      if (def.kind === "photo" && !photos.has((value as { mediaId: string }).mediaId)) delete content.fields[fieldId];
+      if (def.kind === "photoList") content.fields[fieldId] = (value as Array<{ mediaId: string }>).filter((p) => photos.has(p.mediaId));
+      if (def.kind === "giftList") content.fields[fieldId] = (value as string[]).filter((g) => known.has(g));
+      if (def.kind === "riddleList") {
+        content.fields[fieldId] = (value as Array<{ photo?: { mediaId: string } }>).map((r) => (r.photo && !photos.has(r.photo.mediaId) ? { ...r, photo: undefined } : r));
+      }
+    }
+    const payload = await buildPublicPayload(manifest, content as never, {
+      resolvePhoto: (mediaId) => photos.get(mediaId)!,
+      gifts: gifts.map((g) => ({ id: g.id, type: g.gift_type, status: g.status, data: g.data }) as PublicGift),
+      salt: randomBytes(16).toString("hex"),
+      locale: e.locale,
+    });
+    const music = await this.db.selectFrom("app.experiences").select("music").where("id", "=", id).executeTakeFirstOrThrow();
+    if (music.music) payload.music = music.music as PublicPayload["music"];
+    return { rendererKey: manifest.rendererKey, payload };
   }
 
   async eligibility(userId: string, id: string, locale?: Locale) {
@@ -207,6 +362,7 @@ export class ExperiencesService {
     await inTransaction(this.db, "user", ctx.userId, async (trx) => {
       const e = await this.lock(trx, ctx.userId, id);
       if (e.status !== "draft" && e.status !== "disabled") throw new ApiException("EXPERIENCE_STATUS_CONFLICT", { status: e.status });
+      for (const gift of await this.gifts(trx, id)) await this.assertGiftUnlocked(trx, gift);
       await trx
         .updateTable("app.experiences")
         .set({ status: "deleted", deleted_at: new Date(), status_changed_at: new Date() })
@@ -244,6 +400,11 @@ export class ExperiencesService {
   // -------------------------------------------------------------------
 
   async publish(ctx: Ctx, id: string, body: PublishExperienceRequest): Promise<PublishResponse> {
+    // 0. Copies publiques des photos (hors transaction : appels au stockage). Sans effet si déjà faites.
+    const draft = await this.owned(this.db, ctx.userId, id);
+    const draftManifest = await this.manifest(this.db, draft.template_version_id);
+    await this.media.ensurePublished(ctx.userId, this.mediaIdsIn(draftManifest, draft.content.fields ?? {}));
+
     return inTransaction(this.db, "user", ctx.userId, async (trx) => {
       // 1. Verrou sur l'expérience.
       const e = await this.lock(trx, ctx.userId, id);
@@ -355,7 +516,8 @@ export class ExperiencesService {
           experience_id: experienceId,
           position: existing.reduce((max, g) => Math.max(max, g.position + 1), 0),
           gift_type: body.type,
-          status: "ANNOUNCED",
+          // Transfert via ZAWELI : le cadeau attend le paiement de l'expéditeur (refusé en base si les transferts sont fermés).
+          status: money && (money as { receptionMode?: string }).receptionMode === "zaweli_transfer" ? "AWAITING_FUNDING" : "ANNOUNCED",
           data: JSON.stringify(data),
           protected_data: JSON.stringify(protectedData ?? {}),
           amount: money ? money.amount.toFixed(2) : null,
@@ -378,15 +540,19 @@ export class ExperiencesService {
       const e = await this.lockEditable(trx, ctx.userId, experienceId);
       const gift = (await this.gifts(trx, experienceId)).find((g) => g.id === giftId);
       if (!gift) throw new ApiException("GIFT_NOT_FOUND");
+      await this.assertGiftUnlocked(trx, gift);
       const { data, protectedData } = this.validateGift(
         gift.gift_type,
         body.data ?? gift.data,
         body.protectedData === null ? undefined : (body.protectedData ?? (Object.keys(gift.protected_data).length ? gift.protected_data : undefined)),
       );
-      const money = gift.gift_type === "MONEY" ? (data as { amount: number; currency: string }) : null;
+      const money = gift.gift_type === "MONEY" ? (data as { amount: number; currency: string; receptionMode?: string }) : null;
+      // Passer de la promesse au transfert via ZAWELI (ou revenir en arrière), tant que rien n'est payé.
+      const status = money ? (money.receptionMode === "zaweli_transfer" ? "AWAITING_FUNDING" : "ANNOUNCED") : gift.status;
       const row = await trx
         .updateTable("app.gifts")
         .set({
+          ...(status !== gift.status ? { status } : {}),
           data: JSON.stringify(data),
           protected_data: JSON.stringify(protectedData ?? {}),
           ...(money ? { amount: money.amount.toFixed(2), currency: money.currency } : {}),
@@ -403,6 +569,8 @@ export class ExperiencesService {
   async removeGift(ctx: Ctx, experienceId: string, giftId: string): Promise<void> {
     await inTransaction(this.db, "user", ctx.userId, async (trx) => {
       const e = await this.lockEditable(trx, ctx.userId, experienceId);
+      const gift = (await this.gifts(trx, experienceId)).find((g) => g.id === giftId);
+      if (gift) await this.assertGiftUnlocked(trx, gift);
       const deleted = await trx.deleteFrom("app.gifts").where("id", "=", giftId).where("experience_id", "=", experienceId).executeTakeFirst();
       if (!deleted.numDeletedRows) throw new ApiException("GIFT_NOT_FOUND");
       const manifest = await this.manifest(trx, e.template_version_id);
@@ -602,6 +770,22 @@ export class ExperiencesService {
     };
   }
 
+  /**
+   * Un cadeau d'argent dont le paiement est parti ou confirmé ne bouge plus :
+   * ni montant, ni suppression (l'argent est engagé, docs/12).
+   */
+  private async assertGiftUnlocked(trx: Tx, gift: { id: string; gift_type: string; status: string }) {
+    if (gift.gift_type !== "MONEY") return;
+    if (gift.status !== "ANNOUNCED" && gift.status !== "AWAITING_FUNDING" && gift.status !== "CANCELLED") throw new ApiException("GIFT_LOCKED", { status: gift.status });
+    const open = await trx
+      .selectFrom("app.gift_transfers")
+      .select("id")
+      .where("gift_id", "=", gift.id)
+      .where("status", "in", ["initiated", "pending", "succeeded"])
+      .executeTakeFirst();
+    if (open) throw new ApiException("GIFT_LOCKED", { status: gift.status });
+  }
+
   private giftLists(manifest: TemplateManifest): Array<[string, GiftListField]> {
     return Object.entries(manifest.fields).filter((entry): entry is [string, GiftListField] => entry[1].kind === "giftList");
   }
@@ -611,7 +795,7 @@ export class ExperiencesService {
   }
 
   /** Chaque cadeau référencé existe et son type est accepté par la liste qui le contient. */
-  private giftIssues(manifest: TemplateManifest, fields: Record<string, unknown>, gifts: Array<{ id: string; gift_type: string }>) {
+  private giftIssues(manifest: TemplateManifest, fields: Record<string, unknown>, gifts: Array<{ id: string; gift_type: string; status?: string }>) {
     const byId = new Map(gifts.map((g) => [g.id, g]));
     const issues: Array<{ path: string; message: string }> = [];
     for (const [fieldId, def] of this.giftLists(manifest)) {
@@ -619,6 +803,8 @@ export class ExperiencesService {
         const gift = byId.get(giftId);
         if (!gift) issues.push({ path: `fields.${fieldId}`, message: `cadeau introuvable : ${giftId}` });
         else if (!(def.types as readonly string[]).includes(gift.gift_type)) issues.push({ path: `fields.${fieldId}`, message: `type non accepté : ${gift.gift_type}` });
+        // Transfert via ZAWELI : l'argent doit être versé avant que le destinataire ne puisse l'ouvrir.
+        else if (gift.gift_type === "MONEY" && gift.status === "AWAITING_FUNDING") issues.push({ path: `fields.${fieldId}`, message: "MONEY_GIFT_UNFUNDED" });
       }
     }
     return issues;
@@ -641,15 +827,21 @@ export class ExperiencesService {
    * Photos référencées par le contenu : elles doivent appartenir à l'expéditeur
    * et avoir été traitées puis copiées vers le stockage publié (A11).
    */
-  private async publishedPhotos(trx: Tx, userId: string, manifest: TemplateManifest, fields: Record<string, unknown>) {
+  /** Photos référencées par le contenu (champs photo, listes de photos, photos des énigmes). */
+  private mediaIdsIn(manifest: TemplateManifest, fields: Record<string, unknown>): string[] {
     const ids = new Set<string>();
     for (const [fieldId, def] of Object.entries(manifest.fields)) {
       const value = fields[fieldId];
-      if (value === undefined) continue;
+      if (value === undefined || value === null) continue;
       if (def.kind === "photo") ids.add((value as { mediaId: string }).mediaId);
       if (def.kind === "photoList") for (const p of value as Array<{ mediaId: string }>) ids.add(p.mediaId);
       if (def.kind === "riddleList") for (const r of value as Array<{ photo?: { mediaId: string } }>) if (r.photo) ids.add(r.photo.mediaId);
     }
+    return [...ids];
+  }
+
+  private async publishedPhotos(trx: Tx, userId: string, manifest: TemplateManifest, fields: Record<string, unknown>) {
+    const ids = new Set(this.mediaIdsIn(manifest, fields));
     const map = new Map<string, { src: string; width?: number; height?: number }>();
     if (ids.size === 0) return map;
     const rows = await trx
@@ -666,4 +858,19 @@ export class ExperiencesService {
     if (missing.length) throw new ApiException("MEDIA_NOT_READY", { mediaIds: missing });
     return map;
   }
+}
+
+/** Empreinte d'un code d'accès (scrypt salé). Insensible à la casse et aux espaces autour. */
+export function hashAccessCode(code: string): string {
+  const salt = randomBytes(16);
+  const hash = scryptSync(code.trim().toLowerCase(), salt, 32);
+  return `scrypt$${salt.toString("hex")}$${hash.toString("hex")}`;
+}
+
+export function verifyAccessCode(code: string, stored: string): boolean {
+  const [scheme, salt, hash] = stored.split("$");
+  if (scheme !== "scrypt" || !salt || !hash) return false;
+  const expected = Buffer.from(hash, "hex");
+  const given = scryptSync(code.trim().toLowerCase(), Buffer.from(salt, "hex"), expected.length);
+  return timingSafeEqual(given, expected);
 }

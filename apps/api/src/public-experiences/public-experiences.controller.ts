@@ -1,20 +1,23 @@
 import { createHash } from "node:crypto";
-import { Body, Controller, Get, HttpCode, Inject, Param, Post, Req } from "@nestjs/common";
+import { Body, Controller, Get, Headers, HttpCode, Inject, Param, Post, Req } from "@nestjs/common";
 import { Throttle } from "@nestjs/throttler";
 import {
   type CreateReportRequest,
   createReportSchema,
   experienceSlugSchema,
   type PublicExperienceResponse,
+  type UnlockExperienceRequest,
+  unlockExperienceSchema,
 } from "@zaweli/shared-types";
 import type { Request } from "express";
-import { type Kysely, sql } from "kysely";
+import type { Kysely } from "kysely";
 import { z } from "zod";
 import { Public } from "../auth/auth.guard.js";
 import { ApiException } from "../common/api-exception.js";
 import { DB } from "../database/database.module.js";
 import type { Database } from "../database/database.types.js";
 import { audit } from "../database/transaction.js";
+import { verifyAccessCode } from "../experiences/experiences.service.js";
 import { RequestId } from "../i18n/locale.js";
 
 type PublicGiftLike = { id: string; type: string; status: string };
@@ -35,9 +38,24 @@ export class PublicExperiencesController {
   @Public()
   @Throttle({ default: { limit: 60, ttl: 60_000 } })
   @Get(":slug")
-  async bySlug(@Param("slug") slug: string): Promise<PublicExperienceResponse> {
-    const row = await this.live(slug);
+  async bySlug(@Param("slug") slug: string, @Headers("x-access-code") code: string | undefined): Promise<PublicExperienceResponse> {
+    return this.render(await this.live(slug, code));
+  }
+
+  /** Code saisi par le destinataire : renvoie l'expérience si c'est le bon (débit limité contre les essais en série). */
+  @Public()
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
+  @Post(":slug/unlock")
+  @HttpCode(200)
+  async unlock(@Param("slug") slug: string, @Body({ schema: unlockExperienceSchema }) body: UnlockExperienceRequest): Promise<PublicExperienceResponse> {
+    return this.render(await this.live(slug, body.code));
+  }
+
+  private async render(row: Awaited<ReturnType<PublicExperiencesController["live"]>>): Promise<PublicExperienceResponse> {
     const payload = row.payload as PublicExperienceResponse["payload"];
+    // La musique se règle sans republier : on livre toujours le choix courant.
+    if (row.music) payload.music = row.music;
+    else delete payload.music;
 
     // Les statuts de cadeaux sont décidés côté serveur et peuvent évoluer après
     // la publication (« remis », « annulé ») : on livre toujours le statut courant.
@@ -59,8 +77,12 @@ export class PublicExperiencesController {
   @Throttle({ default: { limit: 20, ttl: 60_000 } })
   @Post(":slug/gifts/:giftId/reveal")
   @HttpCode(200)
-  async reveal(@Param("slug") slug: string, @Param("giftId", { schema: z.uuid() }) giftId: string): Promise<{ data: Record<string, unknown> }> {
-    const row = await this.live(slug);
+  async reveal(
+    @Param("slug") slug: string,
+    @Param("giftId", { schema: z.uuid() }) giftId: string,
+    @Headers("x-access-code") code: string | undefined,
+  ): Promise<{ data: Record<string, unknown> }> {
+    const row = await this.live(slug, code);
     const data = (row.protectedPayload as { gifts?: Record<string, Record<string, unknown>> }).gifts?.[giftId];
     if (!data) throw new ApiException("GIFT_NOT_PROTECTED");
     return { data };
@@ -99,7 +121,12 @@ export class PublicExperiencesController {
     return { received: true };
   }
 
-  private async live(slug: string) {
+  /**
+   * Expérience servie au destinataire. Inexistante, désactivée ou suspendue :
+   * la même 404. Pas encore ouverte : 423 avec la date (choix de l'expéditeur).
+   * Protégée : 401 sans code, 403 avec un mauvais code.
+   */
+  async live(slug: string, code?: string) {
     if (!experienceSlugSchema.safeParse(slug).success) throw this.unavailable();
     const row = await this.db
       .selectFrom("app.experiences as e")
@@ -111,15 +138,21 @@ export class PublicExperiencesController {
         "s.public_payload as payload",
         "s.protected_payload as protectedPayload",
         "e.access_code_hash as accessCodeHash",
+        "e.available_from as availableFrom",
+        "e.music",
       ])
       .where("e.slug", "=", slug)
       .where("e.status", "=", "published")
-      .where((eb) => eb.or([eb("e.available_from", "is", null), eb("e.available_from", "<=", sql<Date>`now()`)]))
       .executeTakeFirst();
 
-    // Le code d'accès (fonction S du cahier des charges) n'est pas encore géré :
-    // une expérience protégée par code n'est pas servie plutôt que servie sans contrôle.
-    if (!row || row.accessCodeHash) throw this.unavailable();
+    if (!row) throw this.unavailable();
+    if (row.availableFrom && new Date(row.availableFrom).getTime() > Date.now()) {
+      throw new ApiException("NOT_YET_AVAILABLE", { availableFrom: new Date(row.availableFrom).toISOString() });
+    }
+    if (row.accessCodeHash) {
+      if (!code) throw new ApiException("ACCESS_CODE_REQUIRED");
+      if (!verifyAccessCode(code, row.accessCodeHash)) throw new ApiException("ACCESS_CODE_INVALID");
+    }
     return row;
   }
 

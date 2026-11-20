@@ -17,6 +17,7 @@ type Numeric = ColumnType<string, string, string>;
 export interface AppSettingsTable {
   key: string;
   value: Json<unknown>;
+  updated_by: ColumnType<string | null, string | null | undefined, string | null>;
 }
 
 export interface AuditLogTable {
@@ -39,6 +40,8 @@ export interface ProfilesTable {
   marketing_opt_in: ColumnType<boolean, boolean | undefined, boolean>;
   country_code: string | null;
   country_source: "declared" | "detected" | null;
+  referral_code: string | null;
+  notify_license_expiry: ColumnType<boolean, boolean | undefined, boolean>;
   created_at: CreatedAt;
   deleted_at: Timestamp | null;
 }
@@ -119,6 +122,7 @@ export interface ExperiencesTable {
   current_snapshot_id: string | null;
   access_code_hash: string | null;
   available_from: Timestamp | null;
+  music: ColumnType<Record<string, unknown> | null, string | null | undefined, string | null>;
   first_published_at: Timestamp | null;
   last_published_at: Timestamp | null;
   status_changed_at: ColumnType<Date, Date | string | undefined, Date | string>;
@@ -138,14 +142,27 @@ export interface ExperienceSnapshotsTable {
   created_by: string | null;
 }
 
+export type MediaStatus = "pending_upload" | "processing" | "ready" | "rejected" | "deleted";
+
 export interface MediaAssetsTable {
-  id: string;
+  id: Generated<string>;
   owner_id: string;
   experience_id: string | null;
-  status: "pending_upload" | "processing" | "ready" | "rejected" | "deleted";
+  field_path: string | null;
+  status: ColumnType<MediaStatus, MediaStatus | undefined, MediaStatus>;
+  upload_path: string;
+  declared_mime: string;
+  declared_size_bytes: number;
+  detected_mime: string | null;
   width: number | null;
   height: number | null;
-  published_variants: Json<Record<string, string>> | null;
+  /** Chemins des variantes privées (bucket « media ») : { sm, md, lg }. */
+  variants: ColumnType<Record<string, string>, string | undefined, string>;
+  published_variants: ColumnType<Record<string, string> | null, string | null | undefined, string | null>;
+  rejection_reason: string | null;
+  created_at: CreatedAt;
+  processed_at: Timestamp | null;
+  deleted_at: Timestamp | null;
 }
 
 export interface ReportsTable {
@@ -239,6 +256,7 @@ export interface LicensesTable {
   max_publications_per_day: number;
   publications_used: ColumnType<number, number | undefined, number>;
   ai_generations_used: ColumnType<number, number | undefined, number>;
+  expiry_reminded_at: Timestamp | null;
   created_at: CreatedAt;
 }
 
@@ -272,6 +290,99 @@ export interface OrdersTable {
   country_code: string | null;
   created_at: CreatedAt;
   paid_at: Timestamp | null;
+  expires_at: Timestamp | null;
+  list_amount: ColumnType<string | null, string | null | undefined, string | null>;
+  discount_amount: ColumnType<string, string | undefined, string>;
+  credit_amount: ColumnType<string, string | undefined, string>;
+}
+
+/** Supabase Auth : lecture seule, pour l'adresse des e-mails transactionnels. */
+export interface AuthUsersTable {
+  id: string;
+  email: string | null;
+}
+
+export interface ReferralsTable {
+  referee_id: string;
+  referrer_id: string;
+  created_at: CreatedAt;
+  qualified_at: Timestamp | null;
+  qualifying_order_id: string | null;
+}
+
+export interface GiftCardsTable {
+  id: Generated<string>;
+  owner_id: string;
+  amount: Numeric;
+  balance: Numeric;
+  currency: string;
+  source: "referral" | "admin";
+  source_ref: string;
+  expires_at: Timestamp | null;
+  created_at: CreatedAt;
+}
+
+export interface GiftCardMovementsTable {
+  id: Generated<string>;
+  gift_card_id: string;
+  order_id: string | null;
+  amount: Numeric;
+  kind: "spend" | "release";
+  created_at: CreatedAt;
+}
+
+export type PaymentStatus = "initiated" | "pending" | "succeeded" | "failed" | "cancelled" | "refunded";
+
+export interface PaymentsTable {
+  id: Generated<string>;
+  order_id: string;
+  provider: string;
+  provider_payment_ref: string;
+  status: ColumnType<PaymentStatus, PaymentStatus | undefined, PaymentStatus>;
+  amount: Numeric;
+  currency: string;
+  provider_status: string | null;
+  fee: ColumnType<string | null, string | null | undefined, string | null>;
+  next_action: ColumnType<Record<string, unknown> | null, string | null | undefined, string | null>;
+  failure_reason: string | null;
+  checked_at: Timestamp | null;
+  confirmed_at: Timestamp | null;
+  created_at: CreatedAt;
+}
+
+export interface GiftTransfersTable {
+  id: Generated<string>;
+  gift_id: string | null;
+  owner_id: string;
+  direction: "funding" | "payout";
+  provider: ColumnType<string, string | undefined, string>;
+  provider_ref: string | null;
+  status: ColumnType<PaymentStatus, PaymentStatus | undefined, PaymentStatus>;
+  amount: Numeric;
+  fee: ColumnType<string, string | undefined, string>;
+  currency: string;
+  country_code: string;
+  network: string;
+  phone_last4: string;
+  next_action: ColumnType<Record<string, unknown> | null, string | null | undefined, string | null>;
+  failure_reason: string | null;
+  created_at: CreatedAt;
+  checked_at: Timestamp | null;
+  confirmed_at: Timestamp | null;
+}
+
+export interface WebhookEventsTable {
+  id: Generated<string>;
+  provider: string;
+  provider_event_id: string | null;
+  event_type: string | null;
+  signature_valid: boolean;
+  payload: Json;
+  received_at: CreatedAt;
+  processing_status: ColumnType<"received" | "processed" | "ignored" | "failed", "received" | "processed" | "ignored" | "failed" | undefined, "received" | "processed" | "ignored" | "failed">;
+  processed_at: Timestamp | null;
+  attempts: ColumnType<number, number | undefined, number>;
+  last_error: string | null;
 }
 
 export interface ExchangeRatesTable {
@@ -307,5 +418,12 @@ export interface Database {
   "app.license_recipients": LicenseRecipientsTable;
   "app.license_consumptions": LicenseConsumptionsTable;
   "app.orders": OrdersTable;
+  "app.payments": PaymentsTable;
+  "app.gift_transfers": GiftTransfersTable;
+  "app.webhook_events": WebhookEventsTable;
+  "auth.users": AuthUsersTable;
+  "app.referrals": ReferralsTable;
+  "app.gift_cards": GiftCardsTable;
+  "app.gift_card_movements": GiftCardMovementsTable;
   "app.exchange_rates": ExchangeRatesTable;
 }

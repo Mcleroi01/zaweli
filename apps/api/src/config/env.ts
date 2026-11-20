@@ -15,6 +15,12 @@ export const envSchema = z
     DATABASE_URL: z.string().regex(/^postgres(ql)?:\/\//, "URL PostgreSQL attendue"),
     DATABASE_POOL_MAX: z.coerce.number().int().min(1).max(100).default(10),
     SUPABASE_URL: z.url(),
+    /**
+     * Clé secrète du projet Supabase (service role), côté serveur seulement :
+     * adresses d'envoi signées et traitement des photos (Storage). Sans elle,
+     * l'envoi de photos est indisponible ; le reste de l'API fonctionne.
+     */
+    SUPABASE_SECRET_KEY: z.string().min(20).optional(),
     /** Adresse publique du site : sert à construire les liens partagés (/g/<lien>). */
     PUBLIC_WEB_URL: z.url().default("https://zaweli.store"),
     /**
@@ -31,6 +37,30 @@ export const envSchema = z
       .string()
       .default("")
       .transform((s) => s.split(",").map((x) => x.trim()).filter(Boolean)),
+    /**
+     * Mobile money (MbiyoPay, docs/12). Sans clé, le paiement est simplement
+     * indisponible (le reste de l'API fonctionne). La clé « Test » du tableau
+     * de bord MbiyoPay donne la sandbox, la clé « Live » les vrais paiements :
+     * MBIYOPAY_MODE doit dire laquelle est utilisée (affiché aux clients).
+     */
+    MBIYOPAY_API_KEY: z.string().trim().min(10).optional(),
+    MBIYOPAY_MODE: z.enum(["sandbox", "live"]).default("sandbox"),
+    MBIYOPAY_BASE_URL: z.url({ protocol: /^https?$/ }).default("https://dashboard.mbiyo.africa/api/v1"),
+    /** Secret des webhooks, saisi dans Paramètres → Webhooks du tableau de bord MbiyoPay. */
+    MBIYOPAY_WEBHOOK_SECRET: z.string().min(8).optional(),
+    /** Adresse publique de l'API : MbiyoPay y envoie ses webhooks (obligatoire pour les envois d'argent). */
+    PUBLIC_API_URL: z.url().optional(),
+    /** Musique (Audius, docs/12 §6) : la recherche publique marche sans clé ; une clé d'application est facultative. */
+    AUDIUS_API_URL: z.url({ protocol: /^https?$/ }).default("https://api.audius.co/v1"),
+    AUDIUS_API_KEY: z.string().trim().min(8).optional(),
+    /** E-mails transactionnels (paiement confirmé, argent reçu). Ex. smtps://user:motdepasse@smtp.exemple.com:465. Vide : journal seulement. */
+    /** Aide à l'écriture (OpenRouter). Sans clé ou sans modèle : fonction indisponible. Le modèle est un identifiant OpenRouter. */
+    OPENROUTER_API_KEY: z.string().trim().min(10).optional(),
+    OPENROUTER_MODEL: z.string().trim().regex(/^[a-z0-9._-]+\/[a-z0-9._:-]+$/i, "identifiant OpenRouter « fournisseur/modèle » attendu").optional(),
+    SMTP_URL: z.string().regex(/^smtps?:\/\//, "URL smtp:// ou smtps:// attendue").optional(),
+    MAIL_FROM: z.string().min(3).default("Zaweli <bonjour@zaweli.store>"),
+    /** Revérification des paiements en attente, en secondes (0 : désactivée). */
+    PAYMENTS_RECONCILE_SECONDS: z.coerce.number().int().min(0).max(3600).default(120),
   })
   .superRefine((env, ctx) => {
     if (env.NODE_ENV !== "production") return;
@@ -41,6 +71,12 @@ export const envSchema = z
     }
     if (env.CORS_ORIGINS.length === 0) {
       ctx.addIssue({ code: "custom", path: ["CORS_ORIGINS"], message: "obligatoire en production" });
+    }
+    if (env.MBIYOPAY_API_KEY && !env.MBIYOPAY_WEBHOOK_SECRET) {
+      ctx.addIssue({ code: "custom", path: ["MBIYOPAY_WEBHOOK_SECRET"], message: "obligatoire en production dès qu'une clé MbiyoPay est fournie" });
+    }
+    if (env.MBIYOPAY_API_KEY && !env.PUBLIC_API_URL) {
+      ctx.addIssue({ code: "custom", path: ["PUBLIC_API_URL"], message: "obligatoire en production dès qu'une clé MbiyoPay est fournie (webhooks)" });
     }
   });
 

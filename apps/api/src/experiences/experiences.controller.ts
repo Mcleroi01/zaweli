@@ -1,10 +1,14 @@
-import { Body, Controller, Delete, Get, HttpCode, Param, Patch, Post, Query } from "@nestjs/common";
+import { Body, Controller, Delete, Get, HttpCode, Param, Patch, Post, Put, Query } from "@nestjs/common";
 import { Throttle } from "@nestjs/throttler";
 import {
   type CreateExperienceRequest,
   createExperienceSchema,
   type CreateGiftRequest,
   createGiftSchema,
+  type DuplicateExperienceRequest,
+  duplicateExperienceSchema,
+  type ExperienceSettingsRequest,
+  experienceSettingsSchema,
   EXPERIENCE_STATUSES,
   type ExperienceStatus,
   giftStatusChangeSchema,
@@ -70,6 +74,34 @@ export class ExperiencesController {
   @HttpCode(204)
   remove(@CurrentUser() user: AuthenticatedUser, @RequestId() requestId: string | null, @Param("id", { schema: id }) experienceId: string) {
     return this.experiences.remove({ userId: user.id, requestId }, experienceId);
+  }
+
+  /** Code d'accès, date d'ouverture, musique : appliqués tout de suite, sans republier. */
+  @Put("experiences/:id/settings")
+  settings(
+    @CurrentUser() user: AuthenticatedUser,
+    @RequestId() requestId: string | null,
+    @Param("id", { schema: id }) experienceId: string,
+    @Body({ schema: experienceSettingsSchema }) body: ExperienceSettingsRequest,
+  ) {
+    return this.experiences.settings({ userId: user.id, requestId }, experienceId, body);
+  }
+
+  /** Nouveau brouillon pour une autre personne, à partir de celle-ci. */
+  @Post("experiences/:id/duplicate")
+  duplicate(
+    @CurrentUser() user: AuthenticatedUser,
+    @RequestId() requestId: string | null,
+    @Param("id", { schema: id }) experienceId: string,
+    @Body({ schema: duplicateExperienceSchema }) body: DuplicateExperienceRequest,
+  ) {
+    return this.experiences.duplicate({ userId: user.id, requestId }, experienceId, body.recipientId);
+  }
+
+  /** Aperçu réel du brouillon, réservé à son auteur (rien n'est publié ni consommé). */
+  @Get("experiences/:id/preview")
+  preview(@CurrentUser() user: AuthenticatedUser, @Param("id", { schema: id }) experienceId: string) {
+    return this.experiences.preview(user.id, experienceId);
   }
 
   /** Licences capables de couvrir la publication (indicatif : la publication revérifie tout). */

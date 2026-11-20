@@ -15,6 +15,8 @@ if (process.env.NODE_ENV !== "production") {
 }
 
 const app = await NestFactory.create(AppModule, {
+  // Corps brut conservé pour vérifier la signature des webhooks MbiyoPay.
+  rawBody: true,
   logger: new ConsoleLogger({ json: process.env.NODE_ENV === "production", prefix: "zaweli-api" }),
 });
 configureApp(app);

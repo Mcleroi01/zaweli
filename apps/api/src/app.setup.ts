@@ -24,7 +24,7 @@ export function configureApp(app: INestApplication): INestApplication {
   app.enableCors({
     origin: env.CORS_ORIGINS,
     credentials: false,
-    allowedHeaders: ["authorization", "content-type", "idempotency-key", "x-request-id"],
+    allowedHeaders: ["authorization", "content-type", "idempotency-key", "x-request-id", "x-access-code"],
     methods: ["GET", "POST", "PATCH", "PUT", "DELETE"],
   });
 
