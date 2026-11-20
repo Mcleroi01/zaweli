@@ -44,6 +44,7 @@ export interface ProfilesTable {
   notify_license_expiry: ColumnType<boolean, boolean | undefined, boolean>;
   suspended_at: Timestamp | null;
   suspension_reason: string | null;
+  purged_at: Timestamp | null;
   created_at: CreatedAt;
   deleted_at: Timestamp | null;
 }

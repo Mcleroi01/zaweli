@@ -2,11 +2,23 @@
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { type FormEvent, type ReactNode, useEffect, useState } from "react";
+import { type FormEvent, type ReactNode, useEffect, useMemo, useState } from "react";
 import { authConfigured, authErrorCode, getSupabase, publicOrigin, safeNext } from "@/account/client";
 import { FullPageStatus, useAccount } from "@/account/session";
 import { Wordmark } from "@/components/site/header";
-import { Banner, Button, Field, PasswordInput, TextInput } from "./ui";
+import { COUNTRY_CODES } from "@zaweli/shared-types";
+import { countryOptions } from "./dashboard";
+import { Banner, Button, Field, PasswordInput, Select, TextInput } from "./ui";
+
+/** Pays deviné d'après les langues du navigateur (« fr-CD », « en-KE »), sinon rien. */
+function guessCountry(): string {
+  if (typeof navigator === "undefined") return "";
+  for (const tag of navigator.languages ?? [navigator.language]) {
+    const region = tag.split("-")[1]?.toUpperCase();
+    if (region && COUNTRY_CODES.includes(region)) return region;
+  }
+  return "";
+}
 
 /** Règle partagée avec Supabase (config.toml) : 8 caractères au moins, lettres et chiffres. */
 const strongEnough = (p: string) => p.length >= 8 && /[A-Za-z]/.test(p) && /\d/.test(p);
@@ -193,6 +205,9 @@ export function SignupView() {
   const router = useRouter();
   const { next, ready } = useLeaveWhenSignedIn();
   const [name, setName] = useState("");
+  // Pré-rempli d'après la langue du navigateur (« fr-CD » → CD) ; modifiable, facultatif.
+  const [country, setCountry] = useState(guessCountry);
+  const countries = useMemo(() => countryOptions(locale), [locale]);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -209,7 +224,7 @@ export function SignupView() {
         password,
         options: {
           // Reprises par le profil (langue, nom) et par l'e-mail du code (langue).
-          data: { locale, ...(name.trim() ? { display_name: name.trim() } : {}) },
+          data: { locale, ...(name.trim() ? { display_name: name.trim() } : {}), ...(country ? { country } : {}) },
           emailRedirectTo: `${publicOrigin()}${next}`,
         },
       });
@@ -238,6 +253,18 @@ export function SignupView() {
         </Field>
         <Field label={t.auth.email}>
           {(p) => <TextInput {...p} type="email" autoComplete="email" inputMode="email" required value={email} onChange={(e) => setEmail(e.target.value)} />}
+        </Field>
+        <Field label={t.auth.country} hint={t.auth.countryHint} optionalLabel={t.common.optional}>
+          {(p) => (
+            <Select {...p} autoComplete="country" value={country} onChange={(e) => setCountry(e.target.value)}>
+              <option value="">{t.settings.countryUnset}</option>
+              {countries.map((c) => (
+                <option key={c.code} value={c.code}>
+                  {c.name}
+                </option>
+              ))}
+            </Select>
+          )}
         </Field>
         <Field label={t.auth.password} hint={t.auth.passwordHint}>
           {(p) => (

@@ -137,6 +137,11 @@ export class PaymentsService {
     if (existing) return this.order(ctx, existing.id);
     const price = await this.price(body.planCode, body.currency);
 
+    // Pays de la vente, figé à l'achat : celui du payeur, sinon celui du compte (déclaré ou détecté).
+    const accountCountry = body.payer
+      ? null
+      : ((await this.db.selectFrom("app.profiles").select("country_code").where("id", "=", ctx.userId).executeTakeFirst())?.country_code ?? null);
+
     const order = await inTransaction(this.db, "user", ctx.userId, async (trx) => {
       const q = await this.pricing(trx, ctx.userId, price.amount, price.currency, body.useGiftCard);
       const toPay = toCents(q.amount) > 0n;
@@ -156,7 +161,7 @@ export class PaymentsService {
           currency: price.currency,
           idempotency_key: key,
           provider: toPay ? "mbiyopay" : "gift_card",
-          country_code: body.payer?.countryCode ?? null,
+          country_code: body.payer?.countryCode ?? accountCountry,
           expires_at: new Date(Date.now() + 60 * 60_000),
         })
         .returning("id")

@@ -150,6 +150,9 @@ export class AccountService {
     await this.storage.remove("media", privatePaths).catch((e: unknown) => this.logger.warn(`suppression photos privées : ${(e as Error).message}`));
     await this.storage.remove("published", publicPaths).catch((e: unknown) => this.logger.warn(`suppression photos publiques : ${(e as Error).message}`));
 
+    // Ce qui était publié (instantanés, cadeaux) disparaît aussi de la base.
+    await sql`select app.purge_deleted_account(${userId}::uuid)`.execute(this.db);
+
     if (orders > 0) await this.authAdmin.anonymizeUser(userId);
     else await this.authAdmin.deleteUser(userId);
   }

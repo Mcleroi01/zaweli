@@ -501,7 +501,7 @@ export function LicensesView() {
 // ---------------------------------------------------------------------
 
 /** Pays nommés dans la langue choisie et triés selon elle (Intl : aucune liste de noms à maintenir). */
-function countryOptions(locale: Locale) {
+export function countryOptions(locale: Locale) {
   const names = new Intl.DisplayNames([locale], { type: "region" });
   return COUNTRY_CODES.map((code) => ({ code, name: names.of(code) ?? code })).sort((a, b) => a.name.localeCompare(b.name, locale));
 }

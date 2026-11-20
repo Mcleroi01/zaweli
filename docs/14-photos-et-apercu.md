@@ -50,4 +50,4 @@ Masquer une scène facultative, par exemple « Les cadeaux » dans Coffret, n'em
 
 **Non vérifié** :
 - l'envoi réel vers votre projet Supabase Storage (il faut la clé secrète) ;
-- l'aperçu et l'envoi de photos dans le navigateur. Ils seront testés sur le banc local au prochain passage.
+- ~~l'aperçu et l'envoi de photos dans le navigateur~~ : vérifiés depuis sur le banc local (docs/15 §4). Une vraie photo a été envoyée, traitée, puis affichée en vignette ; l'aperçu s'affiche dans un cadre téléphone de 390 px.

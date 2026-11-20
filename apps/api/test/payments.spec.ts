@@ -518,11 +518,13 @@ describe("Parrainage", () => {
     ]);
     expect(summary.body.giftCards).toEqual([expect.objectContaining({ amount: "5.00", balance: "5.00", currency: "USD", source: "referral" })]);
 
-    // La carte paie une formule entière, sans passer par MbiyoPay.
+    // La carte paie une formule entière, sans passer par MbiyoPay ; le pays de la vente est celui du compte.
+    await pg.query("update app.profiles set country_code = 'CD', country_source = 'declared' where id = $1", [parrain]);
     const calls = gateway.calls.length;
     const paidByCard = await http().post("/v1/orders").set(as(parrain)).send({ planCode: "SOLO", currency: "USD", useGiftCard: true }).expect(201);
     expect(paidByCard.body).toMatchObject({ status: "paid", amount: "0.00", creditAmount: "5.00", listAmount: "5.00" });
     expect(paidByCard.body.licenseId).toEqual(expect.any(String));
+    expect((await pg.query("select country_code from app.orders where id = $1", [paidByCard.body.id])).rows[0]).toEqual({ country_code: "CD" });
     expect(gateway.calls.length).toBe(calls);
     expect((await http().get("/v1/referrals/me").set(as(parrain)).expect(200)).body.giftCards[0].balance).toBe("0.00");
   });

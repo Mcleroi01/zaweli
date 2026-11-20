@@ -88,10 +88,7 @@ Côté Zaweli :
 | Recherche filtrée : titres payants, réservés, masqués ou supprimés écartés | `apps/api/src/music/audius.service.ts` |
 | Route `GET /v1/music/audius/search` (session obligatoire, 30 appels par minute) | `apps/api/src/music/music.controller.ts` |
 
-Ce qui reste à faire pour l'offrir aux clients :
-- déclarer un champ « musique » dans le manifeste des templates ;
-- ajouter un sélecteur dans l'assistant (recherche, écoute, choix) ;
-- dans le template, lancer la lecture au premier geste du destinataire (§11.1), avec le crédit de l'artiste et un lien vers la page audius.co.
+**Livré depuis** ([docs/15](15-finitions-experience-client.md)) : la musique est choisie au niveau de l'expérience, sans champ de manifeste, donc pour tous les modèles. Le sélecteur est dans l'assistant (recherche, écoute, choix). La lecture démarre au premier geste du destinataire, avec le crédit de l'artiste et un lien vers audius.co.
 
 Les conditions d'utilisation et d'attribution d'Audius n'ont pas été trouvées dans sa documentation. Elles sont **à vérifier avant la mise en ligne**.
 
@@ -115,4 +112,3 @@ L'écran Paiements de l'administration, la revérification automatique et les e-
 | Sujet | Prochaine étape |
 | --- | --- |
 | Remboursement d'un cadeau payé mais jamais reçu, ou d'une expérience supprimée | À définir (C10). Aujourd'hui, une expérience qui contient un cadeau payé ne peut pas être supprimée. |
-| Musique Audius dans l'assistant et les templates | Voir §6 |

@@ -34,6 +34,8 @@ const fr = {
     showPassword: "Afficher",
     hidePassword: "Masquer",
     displayName: "Ton prénom",
+    country: "Pays",
+    countryHint: "Sert à te proposer le mobile money de ton pays et à nos statistiques par pays.",
     login: {
       title: "Content de te revoir",
       lead: "Connecte-toi pour retrouver tes brouillons et tes expériences.",
@@ -525,6 +527,8 @@ const en: AccountDictionary = {
     showPassword: "Show",
     hidePassword: "Hide",
     displayName: "Your first name",
+    country: "Country",
+    countryHint: "Used to offer your country's mobile money and for our statistics by country.",
     login: {
       title: "Welcome back",
       lead: "Sign in to find your drafts and experiences.",

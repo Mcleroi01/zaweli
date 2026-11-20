@@ -47,7 +47,7 @@ insert into app.user_roles (user_id, role) values ('<uuid du compte>', 'admin');
 | Continent | Déduit du pays (`packages/shared-types/src/geo.ts`, géoscheme ONU M49). Deux choix courants : l'Amérique centrale et les Caraïbes sont rattachées à l'Amérique du Nord, Chypre à l'Europe. La liste couvre les 249 codes ISO plus XK, vérifiés contre `i18n-iso-countries`. |
 | Noms | `Intl.DisplayNames` en français. Aucune liste de noms n'est recopiée. |
 
-> **À faire côté produit** : demander le pays à l'inscription (champ du formulaire). Le site enverra `countryCode` avec le profil. **À faire au paiement** : remplir `orders.country_code` (pays de facturation ou de la connexion) quand le module de paiement sera écrit.
+> **Fait le 20 novembre 2026** : le formulaire d'inscription demande le pays (facultatif, pré-rempli d'après la langue du navigateur). Il est transmis dans les métadonnées d'inscription, et le profil le reprend comme pays **déclaré** (migration `20261120000500`). Chaque commande fige le pays du payeur mobile money ; une commande payée par carte cadeau prend le pays du compte.
 > **Hébergement** : vérifier quel en-tête de pays le CDN de Hostinger transmet. Sinon, laisser `GEO_COUNTRY_HEADER` vide : la détection est alors désactivée, et seul le pays déclaré compte.
 
 ## 4. Chiffre d'affaires et devises
@@ -97,6 +97,5 @@ Le mode démo est **impossible en production** : la condition porte aussi sur `N
 
 ## 9. Ce qui reste (hors de ce lot)
 
-- Écrans de gestion du MVP §11.9 : utilisateurs (recherche, suspension), formules et prix, templates, licences manuelles, paiements et webhooks, file de modération. Les points d'accès existent déjà en partie (doc 09) ; il manque les écrans.
-- Pays à l'inscription et sur les commandes (§3).
+- Les écrans de gestion du MVP (§11.9) sont livrés : voir [docs/16](16-gestion-administration.md) et [docs/13](13-parrainage-et-cartes-cadeaux.md) §4 pour l'écran Paiements.
 - Taux de change automatiques : volontairement absents. Brancher une source exigerait de choisir un fournisseur.

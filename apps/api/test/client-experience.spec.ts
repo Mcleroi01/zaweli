@@ -266,6 +266,14 @@ describe("Mon compte", () => {
     expect(authAdmin.deleted).toContain(user);
     // Le lien public ne s'ouvre plus, les destinataires sont effacés.
     await http().get(`/v1/public/experiences/${slug}`).expect(404);
+    // Purge : plus d'instantané publié ni de cadeau en base.
+    const left = await pg.query<{ snapshots: number; gifts: number; purged: boolean }>(
+      `select (select count(*)::int from app.experience_snapshots s join app.experiences e on e.id = s.experience_id where e.owner_id = $1) as snapshots,
+              (select count(*)::int from app.gifts where owner_id = $1) as gifts,
+              (select purged_at is not null from app.profiles where id = $1) as purged`,
+      [user],
+    );
+    expect(left.rows[0]).toEqual({ snapshots: 0, gifts: 0, purged: true });
     const recipient = await pg.query<{ display_name: string; contact_email: string | null }>("select display_name, contact_email from app.recipients where owner_id = $1", [user]);
     expect(recipient.rows[0]).toEqual({ display_name: "—", contact_email: null });
 
@@ -303,6 +311,23 @@ describe("Mon compte", () => {
     await pg.exec("commit");
     const refused = await http().delete("/v1/me").set(as(user)).send({ confirmEmail: `${user}@zaweli.test` }).expect(409);
     expect(refused.body.error.code).toBe("ACCOUNT_HAS_PENDING_MONEY");
+  });
+});
+
+describe("Pays à l'inscription", () => {
+  it("reprend le pays choisi dans le formulaire comme pays déclaré, et ignore un code invalide", async () => {
+    const [a, b, c] = [randomUUID(), randomUUID(), randomUUID()];
+    await pg.query("insert into auth.users (id, email, raw_user_meta_data) values ($1, 'a@zaweli.test', $2)", [a, JSON.stringify({ locale: "fr", country: "cd" })]);
+    await pg.query("insert into auth.users (id, email, raw_user_meta_data) values ($1, 'b@zaweli.test', $2)", [b, JSON.stringify({ country: "Congo" })]);
+    await pg.query("insert into auth.users (id, email, raw_user_meta_data) values ($1, 'c@zaweli.test', '{}')", [c]);
+    const rows = await pg.query<{ id: string; country_code: string | null; country_source: string | null }>(
+      "select id, country_code, country_source from app.profiles where id = any($1::uuid[])",
+      [[a, b, c]],
+    );
+    const by = Object.fromEntries(rows.rows.map((r) => [r.id, [r.country_code, r.country_source]]));
+    expect(by[a]).toEqual(["CD", "declared"]);
+    expect(by[b]).toEqual([null, null]);
+    expect(by[c]).toEqual([null, null]);
   });
 });
 
