@@ -25,7 +25,7 @@ Interface en français, au vouvoiement (U3). Le thème gris ardoise sépare nett
 
 - **Connexion** : Supabase Auth (mot de passe, ou lien envoyé par e-mail). Seul un compte existant peut se connecter : `shouldCreateUser: false`.
 - **Autorisation** : l'API lit le rôle `admin` dans `app.user_roles` à **chaque** requête (`RolesGuard`). L'écran d'accès refusé n'est qu'un confort : la vraie barrière est dans l'API.
-- **Aucune mise en cache** : `server.mjs` impose `Cache-Control: private, no-store` sur toutes les pages, sauf `/_next/static`.
+- **Aucune mise en cache** : `public/.htaccess` (copié dans `out/`) impose `Cache-Control: private, no-store` sur toutes les pages, sauf `/_next/static`. Il pose aussi les en-têtes ci-dessous.
 - **Aucune indexation** : `X-Robots-Tag: noindex`, `robots.txt` interdit tout.
 - **Aucun affichage dans un cadre** : `X-Frame-Options: DENY`, et `Referrer-Policy: no-referrer`.
 - **Écritures journalisées** : nouveau taux (`exchange_rate.created`) et changement de devise de référence (`settings.reference_currency_changed`), sous l'acteur `admin`.
@@ -82,11 +82,23 @@ Le mode démo est **impossible en production** : la condition porte aussi sur `N
 
 ## 7. Déploiement (Hostinger)
 
-1. Créer une seconde application Node.js sur le sous-domaine `admin.zaweli.store`. Fichier d'entrée : `apps/admin/server.mjs`, commande de build : `pnpm exec turbo run build --filter=@zaweli/admin`.
-2. Variables : `NEXT_PUBLIC_API_URL`, `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` (voir `apps/admin/.env.example`). Elles sont lues **au build**.
-3. API : ajouter `https://admin.zaweli.store` à `CORS_ORIGINS`, et appliquer la migration `20261118000200_admin_insights.sql`.
-4. Supabase Auth : ajouter `https://admin.zaweli.store` aux URL de redirection autorisées (lien de connexion par e-mail).
-5. Donner le rôle `admin` aux comptes de l'équipe (§2).
+L'administration est un **export statique** (`output: "export"`) : un dossier de fichiers HTML, CSS et JS, sans serveur Node. Toutes les données viennent de l'API, qui vérifie le rôle `admin` à chaque requête. Il suffit donc du sous-domaine « fichiers » créé dans hPanel (`public_html/admin`).
+
+1. **Adresses de production** : créer `apps/admin/.env.production.local` (jamais commité). Il prime sur `.env` au build :
+   ```
+   NEXT_PUBLIC_API_URL=https://api.zaweli.store
+   NEXT_PUBLIC_SUPABASE_URL=https://<projet>.supabase.co
+   NEXT_PUBLIC_SUPABASE_ANON_KEY=<clé publishable>
+   NEXT_PUBLIC_SITE_URL=https://zaweli.store
+   ```
+   Ces valeurs sont **gravées au build** : en changer une impose de reconstruire puis de redéposer.
+2. **Build** : `pnpm exec turbo run build --filter=@zaweli/admin`. Le résultat est dans `apps/admin/out/`, avec le fichier caché `.htaccess`.
+3. **Dépôt** : dans le gestionnaire de fichiers de hPanel, ouvrir `public_html/admin` et **supprimer ce qui s'y trouve** (la page « Coming soon » de Hostinger, `default.php`, etc.). Y déposer **le contenu** de `out/`, et non le dossier lui-même : `index.html` doit être directement dans `public_html/admin`. Le plus simple est de zipper le contenu de `out/`, d'envoyer l'archive, puis de l'extraire sur place. Vérifier que `.htaccess` est bien présent : c'est un fichier caché.
+4. **API** : ajouter `https://admin.zaweli.store` à `CORS_ORIGINS`, et appliquer les migrations.
+5. **Supabase Auth** : ajouter `https://admin.zaweli.store/**` aux URL de redirection autorisées, pour le lien de connexion par e-mail.
+6. **Donner le rôle `admin`** aux comptes de l'équipe (§2).
+
+Contrôle : `curl -I https://admin.zaweli.store/` doit renvoyer `x-robots-tag: noindex, nofollow` et `cache-control: private, no-store`, sans `x-powered-by: PHP`.
 
 ## 8. Vérifications
 

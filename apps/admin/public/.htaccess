@@ -1,0 +1,27 @@
+# =====================================================================
+# Administration Zaweli (admin.zaweli.store) — export statique de Next.js.
+# Ces règles remplacent les en-têtes que Next.js poserait avec un serveur.
+# =====================================================================
+
+Options -Indexes
+# index.html d'abord : la page « Coming soon » (index.php) de Hostinger ne passe plus devant.
+DirectoryIndex index.html
+
+<IfModule mod_headers.c>
+  Header always set X-Content-Type-Options "nosniff"
+  Header always set Referrer-Policy "no-referrer"
+  Header always set X-Frame-Options "DENY"
+  Header always set X-Robots-Tag "noindex, nofollow"
+  Header always set Permissions-Policy "camera=(), microphone=(), geolocation=()"
+  Header always set Strict-Transport-Security "max-age=31536000"
+
+  # Aucune page dans un cache (CDN, navigateur partagé)…
+  Header set Cache-Control "private, no-store"
+  # … sauf les fichiers de /_next/static, dont le nom change à chaque build.
+  <If "%{REQUEST_URI} =~ m#^/_next/static/#">
+    Header set Cache-Control "public, max-age=31536000, immutable"
+  </If>
+</IfModule>
+
+# Une adresse inconnue renvoie la page 404 de l'administration.
+ErrorDocument 404 /404.html
