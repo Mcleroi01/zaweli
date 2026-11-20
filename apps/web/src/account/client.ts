@@ -66,6 +66,28 @@ export const authConfigured = Boolean(SUPABASE_URL && SUPABASE_KEY);
 const PUBLIC_ORIGIN = (process.env.NEXT_PUBLIC_SITE_URL ?? (process.env.NODE_ENV === "production" ? SITE_URL : "")).replace(TRAILING, "");
 export const publicOrigin = () => PUBLIC_ORIGIN || window.location.origin;
 
+/**
+ * Adresse e-mail transmise d'un écran d'accès à l'autre (connexion → mot de passe
+ * oublié, inscription → code). Jamais dans l'adresse de la page : une URL finit
+ * dans l'historique, les journaux du serveur et du CDN, et l'en-tête Referer.
+ * sessionStorage reste dans cet onglet et disparaît à sa fermeture.
+ */
+const HANDOFF_KEY = "zaweli:auth-email";
+export function handOffEmail(email: string | null | undefined): void {
+  try {
+    if (email?.trim()) sessionStorage.setItem(HANDOFF_KEY, email.trim());
+  } catch {
+    // Stockage bloqué (navigation privée) : la personne retapera son adresse.
+  }
+}
+export function handedOffEmail(): string {
+  try {
+    return sessionStorage.getItem(HANDOFF_KEY) ?? "";
+  } catch {
+    return "";
+  }
+}
+
 let supabase: SupabaseClient | null = null;
 
 /** Client Supabase du navigateur : session conservée et renouvelée, retour Google en PKCE. */

@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { type FormEvent, type ReactNode, useEffect, useMemo, useState } from "react";
-import { authConfigured, authErrorCode, getSupabase, publicOrigin, safeNext } from "@/account/client";
+import { type FormEvent, type ReactNode, useEffect, useMemo, useState, useSyncExternalStore } from "react";
+import { authConfigured, authErrorCode, getSupabase, handedOffEmail, handOffEmail, publicOrigin, safeNext } from "@/account/client";
 import { FullPageStatus, useAccount } from "@/account/session";
 import { Wordmark } from "@/components/site/header";
 import { COUNTRY_CODES } from "@zaweli/shared-types";
@@ -19,6 +19,11 @@ function guessCountry(): string {
   }
   return "";
 }
+
+/** sessionStorage ne change pas sous nos pieds : aucun abonnement nécessaire. */
+const noSubscription = () => () => undefined;
+/** Adresse laissée par l'écran précédent ; vide au rendu serveur, sans écart d'hydratation. */
+const useHandedOffEmail = () => useSyncExternalStore(noSubscription, handedOffEmail, () => "");
 
 /** Règle partagée avec Supabase (config.toml) : 8 caractères au moins, lettres et chiffres. */
 const strongEnough = (p: string) => p.length >= 8 && /[A-Za-z]/.test(p) && /\d/.test(p);
@@ -142,7 +147,8 @@ export function LoginView() {
       const code = authErrorCode(err);
       if (code === "email_not_confirmed") {
         await getSupabase().auth.resend({ type: "signup", email: email.trim(), options: { emailRedirectTo: `${publicOrigin()}${next}` } }).catch(() => undefined);
-        router.push(`${path("/verifier")}?email=${encodeURIComponent(email.trim())}&next=${encodeURIComponent(next)}`);
+        handOffEmail(email);
+        router.push(`${path("/verifier")}?next=${encodeURIComponent(next)}`);
         return;
       }
       setError(t.auth.errors[code]);
@@ -177,7 +183,7 @@ export function LoginView() {
           )}
         </Field>
         <div className="flex justify-end">
-          <Link href={`${path("/mot-de-passe")}?email=${encodeURIComponent(email)}`} className="link-draw text-[0.88rem] text-muted">
+          <Link href={path("/mot-de-passe")} onClick={() => handOffEmail(email)} className="link-draw text-[0.88rem] text-muted">
             {t.auth.login.forgot}
           </Link>
         </div>
@@ -231,7 +237,8 @@ export function SignupView() {
       if (err) throw err;
       // Confirmation désactivée côté Supabase : la session arrive tout de suite.
       if (data.session) return router.replace(next);
-      router.push(`${path("/verifier")}?email=${encodeURIComponent(email.trim())}&next=${encodeURIComponent(next)}`);
+      handOffEmail(email);
+      router.push(`${path("/verifier")}?next=${encodeURIComponent(next)}`);
     } catch (err) {
       setError(t.auth.errors[authErrorCode(err)]);
       setBusy(false);
@@ -349,12 +356,15 @@ export function VerifyView() {
   const router = useRouter();
   const params = useSearchParams();
   const next = safeNext(params.get("next"), path("/espace"));
-  const [email, setEmail] = useState(params.get("email") ?? "");
+  // Adresse transmise par l'inscription ou la connexion (jamais par l'URL).
+  const handed = useHandedOffEmail();
+  const [typed, setEmail] = useState<string | null>(null);
+  const email = typed ?? handed;
+  const knownEmail = Boolean(handed);
   const [code, setCode] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const { resend, message, cooldown } = useResend(email, "signup");
-  const knownEmail = Boolean(params.get("email"));
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
@@ -408,8 +418,10 @@ export function VerifyView() {
 export function ResetView() {
   const { t, path } = useAccount();
   const router = useRouter();
-  const params = useSearchParams();
-  const [email, setEmail] = useState(params.get("email") ?? "");
+  // Adresse transmise par la connexion ou les réglages (jamais par l'URL), modifiable.
+  const handed = useHandedOffEmail();
+  const [typed, setEmail] = useState<string | null>(null);
+  const email = typed ?? handed;
   const [sent, setSent] = useState(false);
   const [code, setCode] = useState("");
   const [password, setPassword] = useState("");

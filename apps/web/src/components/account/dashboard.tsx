@@ -4,7 +4,7 @@ import { COUNTRY_CODES, type ExperienceSummaryResponse, type LicenseResponse, ty
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { type FormEvent, useCallback, useEffect, useMemo, useState } from "react";
-import { ApiRequestError, getSupabase, publicOrigin } from "@/account/client";
+import { ApiRequestError, getSupabase, handOffEmail, publicOrigin } from "@/account/client";
 import { useAccount } from "@/account/session";
 import { QrCode } from "./qr-code";
 import { Banner, Button, ButtonLink, Card, EmptyState, Field, formatDate, Gauge, PageTitle, Select, StatusBadge, TextArea, TextInput } from "./ui";
@@ -240,7 +240,7 @@ export function OverviewView() {
     <div className="space-y-12">
       <PageTitle title={t.overview.hello(profile?.displayName ?? null)} lead={t.overview.lead} />
       {profile && !profile.emailVerified && (
-        <Banner tone="warning" action={<ButtonLink variant="quiet" href={`${path("/verifier")}?email=${encodeURIComponent(profile.email ?? "")}`}>{t.overview.verifyAction}</ButtonLink>}>
+        <Banner tone="warning" action={<ButtonLink variant="quiet" href={path("/verifier")} onClick={() => handOffEmail(profile.email)}>{t.overview.verifyAction}</ButtonLink>}>
           {t.overview.verifyBanner}
         </Banner>
       )}
@@ -597,7 +597,7 @@ export function SettingsView() {
         <h2 className="kicker text-muted">{t.settings.security}</h2>
         <div className="flex flex-wrap gap-2">
           {!google && (
-            <ButtonLink variant="secondary" href={`${path("/mot-de-passe")}?email=${encodeURIComponent(email ?? "")}`}>
+            <ButtonLink variant="secondary" href={path("/mot-de-passe")} onClick={() => handOffEmail(email)}>
               {t.settings.changePassword}
             </ButtonLink>
           )}
