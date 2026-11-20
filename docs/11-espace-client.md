@@ -62,9 +62,22 @@ Dans le projet Supabase hébergé (tableau de bord) :
    - activer « Confirm email » ;
    - régler la longueur du code (OTP) à 6 ;
    - mot de passe : 8 caractères au moins, lettres et chiffres.
-2. **Auth → Email Templates** :
-   - pour « Confirm signup » et « Reset password », coller le contenu de [`supabase/templates/confirmation.html`](../supabase/templates/confirmation.html) et [`supabase/templates/recovery.html`](../supabase/templates/recovery.html) ;
-   - ces modèles affichent le code (`{{ .Token }}`) dans la langue d'inscription.
+2. **Auth → Email Templates** : coller le contenu de chaque modèle et son objet (les objets sont dans [`supabase/config.toml`](../supabase/config.toml)).
+
+   | Modèle Supabase | Fichier | Contenu |
+   | --- | --- | --- |
+   | Confirm signup | [`confirmation.html`](../supabase/templates/confirmation.html) | code `{{ .Token }}` |
+   | Reset password | [`recovery.html`](../supabase/templates/recovery.html) | code `{{ .Token }}` |
+   | Invite user | [`invite.html`](../supabase/templates/invite.html) | bouton `{{ .ConfirmationURL }}`, bilingue |
+   | Magic link | [`magic_link.html`](../supabase/templates/magic_link.html) | bouton `{{ .ConfirmationURL }}` (connexion à l'administration) |
+
+   La langue suit celle de l'inscription (`.Data.locale`). Les quatre e-mails partagent un même gabarit :
+   - un sceau de cire grenat marqué d'un « Z » doré, qui se pose ;
+   - un filet d'or qui se trace ;
+   - un éclat d'or qui traverse le code ;
+   - des étoiles qui scintillent.
+
+   Le mouvement est en CSS (`@keyframes`). Il est joué par Apple Mail, l'app Mail de l'iPhone, Samsung Mail et Thunderbird, et coupé si la personne demande moins d'animations. Gmail et Outlook affichent la version fixe, complète. Aucun JavaScript ne tourne dans un e-mail : GSAP n'y est pas possible.
 3. **Auth → Providers → Google** :
    - coller l'ID client et le secret créés dans Google Cloud Console ;
    - y ajouter l'URI de redirection `https://<projet>.supabase.co/auth/v1/callback`.

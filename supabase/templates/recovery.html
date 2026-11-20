@@ -1,15 +1,211 @@
 {{ if eq .Data.locale "en" }}
-<div style="font-family:Georgia,serif;max-width:480px;margin:0 auto;padding:32px;color:#1a1311;background:#fbf8f2">
-  <p style="font-size:22px;margin:0 0 24px">Zaweli<span style="color:#a8823f">.</span></p>
-  <p style="font-size:16px;line-height:1.6">Enter this code to choose a new password:</p>
-  <p style="font-size:32px;letter-spacing:8px;font-weight:bold;margin:24px 0;color:#6d0f1d">{{ .Token }}</p>
-  <p style="font-size:14px;line-height:1.6;color:#6b605b">The code is valid for one hour. If you did not ask for it, ignore this email: your password stays the same.</p>
-</div>
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<meta name="supported-color-schemes" content="light">
+<title>Zaweli</title>
+
+<style>
+  /* Mouvement : seulement si le client le permet ET si la personne ne demande pas moins d'animations. */
+  @media (prefers-reduced-motion: no-preference) {
+    .zw-seal { animation: zw-seal 1.1s cubic-bezier(.2,1.4,.4,1) .15s both; }
+    .zw-glow { animation: zw-glow 2.8s ease-in-out 1.3s infinite; }
+    .zw-line { animation: zw-line 1.2s cubic-bezier(.65,0,.35,1) .7s both; }
+    .zw-rise { animation: zw-rise .9s cubic-bezier(.2,.8,.2,1) both; }
+    .zw-d1 { animation-delay: .9s; } .zw-d2 { animation-delay: 1.1s; } .zw-d3 { animation-delay: 1.35s; } .zw-d4 { animation-delay: 1.6s; }
+    .zw-star { animation: zw-twinkle 2.4s ease-in-out infinite; }
+    .zw-s2 { animation-delay: .8s; } .zw-s3 { animation-delay: 1.6s; } .zw-s4 { animation-delay: 2.2s; }
+    .zw-code {
+      background-image: linear-gradient(100deg, #6d0f1d 0%, #6d0f1d 38%, #e2bf72 50%, #6d0f1d 62%, #6d0f1d 100%);
+      background-size: 280% 100%;
+      -webkit-background-clip: text; background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: zw-shine 3.2s ease-in-out 1.8s infinite, zw-rise .9s cubic-bezier(.2,.8,.2,1) 1.35s both;
+    }
+    .zw-button { animation: zw-rise .9s cubic-bezier(.2,.8,.2,1) 1.35s both, zw-pulse 2.6s ease-in-out 2.4s infinite; }
+  }
+  @keyframes zw-seal { 0% { opacity: 0; transform: scale(.4) rotate(-28deg); } 70% { opacity: 1; } 100% { opacity: 1; transform: scale(1) rotate(0); } }
+  @keyframes zw-glow { 0%, 100% { box-shadow: 0 0 0 0 rgba(226,191,114,0), 0 10px 24px -10px rgba(109,15,29,.55); } 50% { box-shadow: 0 0 0 10px rgba(226,191,114,.18), 0 10px 24px -10px rgba(109,15,29,.55); } }
+  @keyframes zw-line { from { width: 0; } to { width: 96px; } }
+  @keyframes zw-rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+  @keyframes zw-twinkle { 0%, 100% { opacity: .2; transform: scale(.8); } 50% { opacity: 1; transform: scale(1.15); } }
+  @keyframes zw-shine { 0% { background-position: 100% 0; } 60%, 100% { background-position: 0 0; } }
+  @keyframes zw-pulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(109,15,29,0); } 50% { box-shadow: 0 0 0 8px rgba(109,15,29,.12); } }
+  .zw-button:hover { background: #8a1526 !important; }
+  @media (max-width: 520px) {
+    .zw-card { padding: 32px 22px !important; }
+    .zw-title { font-size: 26px !important; }
+    .zw-code { font-size: 30px !important; letter-spacing: 7px !important; }
+  }
+</style>
+
+</head>
+<body style="margin:0;padding:0;background:#f3ece1;">
+<!-- Aperçu affiché par la messagerie, invisible dans l'e-mail -->
+<div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent;">Your code to choose a new password.&#8203;&nbsp;&#8203;&nbsp;&#8203;&nbsp;&#8203;&nbsp;&#8203;&nbsp;&#8203;&nbsp;</div>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#f3ece1;">
+  <tr>
+    <td align="center" style="padding:40px 14px;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:520px;">
+        <tr>
+          <td class="zw-card" style="padding:40px 36px 36px;background:#fffaf3;border:1px solid #e8dccb;border-radius:22px;text-align:center;">
+            <!-- Sceau de cire -->
+            <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center" style="margin:0 auto;">
+              <tr>
+                <td style="padding:0 10px;vertical-align:top;"><span class="zw-star " style="display:inline-block;font-size:12px;line-height:1;color:#e2bf72;">✦</span></td>
+                <td>
+                  <div class="zw-seal zw-glow" style="width:76px;height:76px;border-radius:50%;background:#6d0f1d;background-image:radial-gradient(circle at 35% 30%, #9a2035 0%, #6d0f1d 55%, #4a0913 100%);box-shadow:0 10px 24px -10px rgba(109,15,29,.55);text-align:center;">
+                    <div style="display:inline-block;margin-top:9px;width:56px;height:56px;border-radius:50%;border:1px solid rgba(226,191,114,.55);text-align:center;">
+                      <span style="display:inline-block;margin-top:10px;font-family:Georgia,'Times New Roman',serif;font-style:italic;font-size:30px;line-height:1;color:#e2bf72;">Z</span>
+                    </div>
+                  </div>
+                </td>
+                <td style="padding:22px 10px 0;vertical-align:top;"><span class="zw-star zw-s2" style="display:inline-block;font-size:14px;line-height:1;color:#e2bf72;">✧</span></td>
+              </tr>
+            </table>
+            <div style="height:18px;line-height:18px;"><span class="zw-star zw-s3" style="display:inline-block;font-size:22px;line-height:1;color:#e2bf72;">·</span>&nbsp;&nbsp;&nbsp;<span class="zw-star zw-s4" style="display:inline-block;font-size:9px;line-height:1;color:#e2bf72;">✦</span></div>
+            <p style="margin:0;font-family:Georgia,'Times New Roman',serif;font-size:22px;letter-spacing:-0.3px;color:#1a1311;">Zaweli<span style="color:#a8823f;">.</span></p>
+            <div class="zw-line" style="width:96px;height:1px;margin:14px auto 26px;background:#c9a661;background-image:linear-gradient(90deg, rgba(201,166,97,0), #c9a661, rgba(201,166,97,0));"></div>
+
+            <p class="zw-rise zw-d1" style="margin:0 0 10px;font-family:Arial,Helvetica,sans-serif;font-size:11px;letter-spacing:3px;text-transform:uppercase;color:#a8823f;">Password</p>
+            <h1 class="zw-title zw-rise zw-d1" style="margin:0 0 16px;font-family:Georgia,'Times New Roman',serif;font-size:30px;font-weight:normal;line-height:1.2;color:#1a1311;">Let's open the door again</h1>
+            <p class="zw-rise zw-d2" style="margin:0 auto;max-width:400px;font-family:Arial,Helvetica,sans-serif;font-size:16px;line-height:1.65;color:#3d322e;">Enter this code on Zaweli to choose a new password. Your surprises are waiting, untouched.</p>
+
+            <!-- Code : un éclat d'or le traverse (clients compatibles) ; ailleurs, grenat plein -->
+            <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center" style="margin:30px auto 26px;">
+              <tr>
+                <td style="padding:20px 26px;background:#f6efe3;border:1px solid #eadfcd;border-radius:14px;text-align:center;">
+                  <p style="margin:0 0 8px;font-family:Arial,Helvetica,sans-serif;font-size:11px;letter-spacing:2px;text-transform:uppercase;color:#a8823f;">Your code</p>
+                  <p class="zw-code" style="margin:0;font-family:'Trebuchet MS',Arial,Helvetica,sans-serif;font-size:36px;font-weight:bold;letter-spacing:10px;font-variant-numeric:lining-nums tabular-nums;color:#6d0f1d;">{{ .Token }}</p>
+                </td>
+              </tr>
+            </table>
+
+            <p class="zw-rise zw-d4" style="margin:0 auto;max-width:400px;font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:1.65;color:#7a6d66;">It is valid for one hour. If you did not ask for this, ignore this email: your password stays the same.</p>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:22px 12px 0;text-align:center;font-family:Georgia,'Times New Roman',serif;font-size:14px;font-style:italic;color:#8a7a70;">
+            Give a moment, not just a message.
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:8px 12px 0;text-align:center;font-family:Arial,Helvetica,sans-serif;font-size:12px;color:#a39488;">
+            <a href="https://zaweli.store" style="color:#a39488;text-decoration:none;">zaweli.store</a>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>
+</body>
+</html>
 {{ else }}
-<div style="font-family:Georgia,serif;max-width:480px;margin:0 auto;padding:32px;color:#1a1311;background:#fbf8f2">
-  <p style="font-size:22px;margin:0 0 24px">Zaweli<span style="color:#a8823f">.</span></p>
-  <p style="font-size:16px;line-height:1.6">Saisis ce code pour choisir un nouveau mot de passe :</p>
-  <p style="font-size:32px;letter-spacing:8px;font-weight:bold;margin:24px 0;color:#6d0f1d">{{ .Token }}</p>
-  <p style="font-size:14px;line-height:1.6;color:#6b605b">Le code est valable une heure. Si tu ne l'as pas demandé, ignore cet e-mail : ton mot de passe reste inchangé.</p>
-</div>
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<meta name="supported-color-schemes" content="light">
+<title>Zaweli</title>
+
+<style>
+  /* Mouvement : seulement si le client le permet ET si la personne ne demande pas moins d'animations. */
+  @media (prefers-reduced-motion: no-preference) {
+    .zw-seal { animation: zw-seal 1.1s cubic-bezier(.2,1.4,.4,1) .15s both; }
+    .zw-glow { animation: zw-glow 2.8s ease-in-out 1.3s infinite; }
+    .zw-line { animation: zw-line 1.2s cubic-bezier(.65,0,.35,1) .7s both; }
+    .zw-rise { animation: zw-rise .9s cubic-bezier(.2,.8,.2,1) both; }
+    .zw-d1 { animation-delay: .9s; } .zw-d2 { animation-delay: 1.1s; } .zw-d3 { animation-delay: 1.35s; } .zw-d4 { animation-delay: 1.6s; }
+    .zw-star { animation: zw-twinkle 2.4s ease-in-out infinite; }
+    .zw-s2 { animation-delay: .8s; } .zw-s3 { animation-delay: 1.6s; } .zw-s4 { animation-delay: 2.2s; }
+    .zw-code {
+      background-image: linear-gradient(100deg, #6d0f1d 0%, #6d0f1d 38%, #e2bf72 50%, #6d0f1d 62%, #6d0f1d 100%);
+      background-size: 280% 100%;
+      -webkit-background-clip: text; background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: zw-shine 3.2s ease-in-out 1.8s infinite, zw-rise .9s cubic-bezier(.2,.8,.2,1) 1.35s both;
+    }
+    .zw-button { animation: zw-rise .9s cubic-bezier(.2,.8,.2,1) 1.35s both, zw-pulse 2.6s ease-in-out 2.4s infinite; }
+  }
+  @keyframes zw-seal { 0% { opacity: 0; transform: scale(.4) rotate(-28deg); } 70% { opacity: 1; } 100% { opacity: 1; transform: scale(1) rotate(0); } }
+  @keyframes zw-glow { 0%, 100% { box-shadow: 0 0 0 0 rgba(226,191,114,0), 0 10px 24px -10px rgba(109,15,29,.55); } 50% { box-shadow: 0 0 0 10px rgba(226,191,114,.18), 0 10px 24px -10px rgba(109,15,29,.55); } }
+  @keyframes zw-line { from { width: 0; } to { width: 96px; } }
+  @keyframes zw-rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+  @keyframes zw-twinkle { 0%, 100% { opacity: .2; transform: scale(.8); } 50% { opacity: 1; transform: scale(1.15); } }
+  @keyframes zw-shine { 0% { background-position: 100% 0; } 60%, 100% { background-position: 0 0; } }
+  @keyframes zw-pulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(109,15,29,0); } 50% { box-shadow: 0 0 0 8px rgba(109,15,29,.12); } }
+  .zw-button:hover { background: #8a1526 !important; }
+  @media (max-width: 520px) {
+    .zw-card { padding: 32px 22px !important; }
+    .zw-title { font-size: 26px !important; }
+    .zw-code { font-size: 30px !important; letter-spacing: 7px !important; }
+  }
+</style>
+
+</head>
+<body style="margin:0;padding:0;background:#f3ece1;">
+<!-- Aperçu affiché par la messagerie, invisible dans l'e-mail -->
+<div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent;">Ton code pour choisir un nouveau mot de passe.&#8203;&nbsp;&#8203;&nbsp;&#8203;&nbsp;&#8203;&nbsp;&#8203;&nbsp;&#8203;&nbsp;</div>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#f3ece1;">
+  <tr>
+    <td align="center" style="padding:40px 14px;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:520px;">
+        <tr>
+          <td class="zw-card" style="padding:40px 36px 36px;background:#fffaf3;border:1px solid #e8dccb;border-radius:22px;text-align:center;">
+            <!-- Sceau de cire -->
+            <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center" style="margin:0 auto;">
+              <tr>
+                <td style="padding:0 10px;vertical-align:top;"><span class="zw-star " style="display:inline-block;font-size:12px;line-height:1;color:#e2bf72;">✦</span></td>
+                <td>
+                  <div class="zw-seal zw-glow" style="width:76px;height:76px;border-radius:50%;background:#6d0f1d;background-image:radial-gradient(circle at 35% 30%, #9a2035 0%, #6d0f1d 55%, #4a0913 100%);box-shadow:0 10px 24px -10px rgba(109,15,29,.55);text-align:center;">
+                    <div style="display:inline-block;margin-top:9px;width:56px;height:56px;border-radius:50%;border:1px solid rgba(226,191,114,.55);text-align:center;">
+                      <span style="display:inline-block;margin-top:10px;font-family:Georgia,'Times New Roman',serif;font-style:italic;font-size:30px;line-height:1;color:#e2bf72;">Z</span>
+                    </div>
+                  </div>
+                </td>
+                <td style="padding:22px 10px 0;vertical-align:top;"><span class="zw-star zw-s2" style="display:inline-block;font-size:14px;line-height:1;color:#e2bf72;">✧</span></td>
+              </tr>
+            </table>
+            <div style="height:18px;line-height:18px;"><span class="zw-star zw-s3" style="display:inline-block;font-size:22px;line-height:1;color:#e2bf72;">·</span>&nbsp;&nbsp;&nbsp;<span class="zw-star zw-s4" style="display:inline-block;font-size:9px;line-height:1;color:#e2bf72;">✦</span></div>
+            <p style="margin:0;font-family:Georgia,'Times New Roman',serif;font-size:22px;letter-spacing:-0.3px;color:#1a1311;">Zaweli<span style="color:#a8823f;">.</span></p>
+            <div class="zw-line" style="width:96px;height:1px;margin:14px auto 26px;background:#c9a661;background-image:linear-gradient(90deg, rgba(201,166,97,0), #c9a661, rgba(201,166,97,0));"></div>
+
+            <p class="zw-rise zw-d1" style="margin:0 0 10px;font-family:Arial,Helvetica,sans-serif;font-size:11px;letter-spacing:3px;text-transform:uppercase;color:#a8823f;">Mot de passe</p>
+            <h1 class="zw-title zw-rise zw-d1" style="margin:0 0 16px;font-family:Georgia,'Times New Roman',serif;font-size:30px;font-weight:normal;line-height:1.2;color:#1a1311;">On te rouvre la porte</h1>
+            <p class="zw-rise zw-d2" style="margin:0 auto;max-width:400px;font-family:Arial,Helvetica,sans-serif;font-size:16px;line-height:1.65;color:#3d322e;">Saisis ce code sur Zaweli pour choisir un nouveau mot de passe. Tes surprises t'attendent, intactes.</p>
+
+            <!-- Code : un éclat d'or le traverse (clients compatibles) ; ailleurs, grenat plein -->
+            <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center" style="margin:30px auto 26px;">
+              <tr>
+                <td style="padding:20px 26px;background:#f6efe3;border:1px solid #eadfcd;border-radius:14px;text-align:center;">
+                  <p style="margin:0 0 8px;font-family:Arial,Helvetica,sans-serif;font-size:11px;letter-spacing:2px;text-transform:uppercase;color:#a8823f;">Ton code</p>
+                  <p class="zw-code" style="margin:0;font-family:'Trebuchet MS',Arial,Helvetica,sans-serif;font-size:36px;font-weight:bold;letter-spacing:10px;font-variant-numeric:lining-nums tabular-nums;color:#6d0f1d;">{{ .Token }}</p>
+                </td>
+              </tr>
+            </table>
+
+            <p class="zw-rise zw-d4" style="margin:0 auto;max-width:400px;font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:1.65;color:#7a6d66;">Il est valable une heure. Si tu n'as rien demandé, ignore cet e-mail : ton mot de passe ne change pas.</p>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:22px 12px 0;text-align:center;font-family:Georgia,'Times New Roman',serif;font-size:14px;font-style:italic;color:#8a7a70;">
+            Offre un moment, pas seulement un message.
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:8px 12px 0;text-align:center;font-family:Arial,Helvetica,sans-serif;font-size:12px;color:#a39488;">
+            <a href="https://zaweli.store" style="color:#a39488;text-decoration:none;">zaweli.store</a>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>
+</body>
+</html>
 {{ end }}

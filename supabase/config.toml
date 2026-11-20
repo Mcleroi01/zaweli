@@ -245,10 +245,19 @@ otp_expiry = 3600
 # admin_email = "admin@email.com"
 # sender_name = "Admin"
 
-# Uncomment to customize email template
-# [auth.email.template.invite]
-# subject = "You have been invited"
-# content_path = "./supabase/templates/invite.html"
+# E-mails de Zaweli (supabase/templates) : un même gabarit, sceau de cire et
+# mouvement en CSS (@keyframes), joué par Apple Mail, iOS Mail, Samsung Mail et
+# Thunderbird ; Gmail et Outlook affichent l'état final, complet. Pas de JavaScript
+# dans un e-mail : GSAP n'y tourne pas. La langue suit .Data.locale (inscription).
+# Objets bilingues : Supabase n'en accepte qu'un par modèle.
+[auth.email.template.invite]
+subject = "On t'attendait sur Zaweli · You're invited to Zaweli"
+content_path = "./supabase/templates/invite.html"
+
+# Lien de connexion par e-mail (administration : admin.zaweli.store).
+[auth.email.template.magic_link]
+subject = "Ton lien de connexion Zaweli · Your Zaweli sign-in link"
+content_path = "./supabase/templates/magic_link.html"
 
 # Uncomment to customize notification email template
 # [auth.email.notification.password_changed]
@@ -256,15 +265,15 @@ otp_expiry = 3600
 # subject = "Your password has been changed"
 # content_path = "./supabase/templates/password_changed_notification.html"
 
-# Codes Ã  6 chiffres (cahier des charges Â§7.2) : l'e-mail porte {{ .Token }},
-# saisi sur /verifier (inscription) et /mot-de-passe (rÃ©initialisation).
-# Les modÃ¨les choisissent leur langue d'aprÃ¨s la langue d'inscription (.Data.locale).
+# Codes à 6 chiffres (cahier des charges §7.2) : l'e-mail porte {{ .Token }},
+# saisi sur /verifier (inscription) et /mot-de-passe (réinitialisation).
+# Les modèles choisissent leur langue d'après la langue d'inscription (.Data.locale).
 [auth.email.template.confirmation]
-subject = "Zaweli Â· Ton code de confirmation / Your confirmation code"
+subject = "Ta première surprise commence ici · Your first surprise starts here"
 content_path = "./supabase/templates/confirmation.html"
 
 [auth.email.template.recovery]
-subject = "Zaweli Â· Ton code de rÃ©initialisation / Your reset code"
+subject = "Ton code pour revenir sur Zaweli · Your code to get back in"
 content_path = "./supabase/templates/recovery.html"
 
 [auth.sms]
@@ -334,8 +343,8 @@ max_frequency = "5s"
 # Use an external OAuth provider. The full list of providers are: `apple`, `azure`, `bitbucket`,
 # `discord`, `facebook`, `github`, `gitlab`, `google`, `keycloak`, `linkedin_oidc`, `notion`, `twitch`,
 # `twitter`, `x`, `slack_oidc`, `spotify`, `workos`, `zoom`.
-# Connexion Google (Â§7.2). Identifiants OAuth crÃ©Ã©s dans Google Cloud Console ;
-# URI de redirection autorisÃ©e : <SUPABASE_URL>/auth/v1/callback.
+# Connexion Google (§7.2). Identifiants OAuth créés dans Google Cloud Console ;
+# URI de redirection autorisée : <SUPABASE_URL>/auth/v1/callback.
 [auth.external.google]
 # Désactivé en local tant que les identifiants ne sont pas fournis ; à activer dans le projet Supabase hébergé.
 enabled = false
