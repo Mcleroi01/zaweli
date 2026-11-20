@@ -6,7 +6,7 @@ import type { PublicPayload } from "@zaweli/template-engine/schema";
 import { type FormEvent, useMemo, useState } from "react";
 import { ExperienceView } from "@/experiences/registry";
 
-const API_URL = (process.env.NEXT_PUBLIC_API_URL ?? "").replace(/\/+$/, "");
+const API_URL = (process.env.NEXT_PUBLIC_API_URL ?? "").replace(/[\s/.]+$/, "");
 
 /** Code saisi par le destinataire, gardé pour l'onglet (pages de réception, déballage). */
 export const accessCodeKey = (slug: string) => `zw:code:${slug}`;

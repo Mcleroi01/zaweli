@@ -40,3 +40,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Archive à déposer sur Hostinger (docs/10 §7)
+/admin-zaweli-store.zip

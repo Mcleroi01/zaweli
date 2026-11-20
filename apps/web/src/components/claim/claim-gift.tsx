@@ -6,7 +6,7 @@ import { formatMoney, MobileMoneyForm, usePaymentPolling } from "@/components/ac
 import { Banner, Field, TextInput } from "@/components/account/ui";
 import { storedAccessCode } from "@/components/experience/live-experience";
 
-const API_URL = (process.env.NEXT_PUBLIC_API_URL ?? "").replace(/\/+$/, "");
+const API_URL = (process.env.NEXT_PUBLIC_API_URL ?? "").replace(/[\s/.]+$/, "");
 
 /** Textes de la page de réception, dans la langue de l'expérience (tutoiement, comme le template). */
 const TEXT = {

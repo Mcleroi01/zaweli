@@ -13,7 +13,7 @@ import {
 function apiBaseUrl(): string {
   const url = process.env.API_URL_INTERNAL ?? process.env.NEXT_PUBLIC_API_URL;
   if (!url) throw new Error("NEXT_PUBLIC_API_URL manquante (lance `pnpm env:local`).");
-  return url.replace(/\/+$/, "");
+  return url.replace(/[\s/.]+$/, "");
 }
 
 export type HealthResult = { reachable: true; health: HealthResponse } | { reachable: false; reason: string };

@@ -47,9 +47,14 @@ import { SITE_URL } from "@/content/site";
  *  - NEXT_PUBLIC_SUPABASE_URL et NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY : Supabase Auth ;
  *  - NEXT_PUBLIC_API_URL : l'API Zaweli, qui revérifie tout (propriété, licences, quotas).
  */
+/**
+ * Retire « / » et « . » finaux : « https://zaweli.store. » (point final saisi
+ * dans l'hébergeur) serait une AUTRE origine pour le navigateur, donc refusée par CORS.
+ */
+const TRAILING = /[\s/.]+$/;
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
 const SUPABASE_KEY = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "";
-const API_URL = (process.env.NEXT_PUBLIC_API_URL ?? "").replace(/\/+$/, "");
+const API_URL = (process.env.NEXT_PUBLIC_API_URL ?? "").replace(TRAILING, "");
 
 export const authConfigured = Boolean(SUPABASE_URL && SUPABASE_KEY);
 
@@ -58,7 +63,7 @@ export const authConfigured = Boolean(SUPABASE_URL && SUPABASE_KEY);
  * NEXT_PUBLIC_SITE_URL si elle est fournie, sinon le domaine public en production.
  * Seul le développement garde l'adresse de la page (localhost).
  */
-const PUBLIC_ORIGIN = (process.env.NEXT_PUBLIC_SITE_URL ?? (process.env.NODE_ENV === "production" ? SITE_URL : "")).replace(/\/+$/, "");
+const PUBLIC_ORIGIN = (process.env.NEXT_PUBLIC_SITE_URL ?? (process.env.NODE_ENV === "production" ? SITE_URL : "")).replace(TRAILING, "");
 export const publicOrigin = () => PUBLIC_ORIGIN || window.location.origin;
 
 let supabase: SupabaseClient | null = null;

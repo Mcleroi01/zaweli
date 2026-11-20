@@ -8,7 +8,7 @@ import { formatDateTime } from "@/lib/format";
 import { useData } from "@/lib/use-data";
 
 /** Adresse publique du site (lien vers l'expérience signalée). */
-const SITE = (process.env.NEXT_PUBLIC_SITE_URL ?? "https://zaweli.store").replace(/\/+$/, "");
+const SITE = (process.env.NEXT_PUBLIC_SITE_URL ?? "https://zaweli.store").replace(/[\s/.]+$/, "");
 const REASON: Record<string, string> = {
   harassment: "Harcèlement",
   impersonation: "Usurpation d'identité",
