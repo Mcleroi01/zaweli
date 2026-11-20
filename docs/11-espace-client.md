@@ -88,7 +88,7 @@ Dans le projet Supabase hébergé (tableau de bord) :
 
 Variables du site (Hostinger, application `zaweli.store`) :
 - `NEXT_PUBLIC_SUPABASE_URL` et `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` : la clé publique ;
-- `NEXT_PUBLIC_API_URL`, par exemple `https://api.zaweli.store`.
+- `NEXT_PUBLIC_API_URL` : `https://zaweli.store` (l'API est montée sous /v1 du site, docs/17).
 - `NEXT_PUBLIC_SITE_URL` (facultatif) : origine des liens envoyés par e-mail et des liens de partage. En production, `https://zaweli.store` par défaut ; en développement, l'adresse de la page.
 
 Côté API, `CORS_ORIGINS` doit contenir `https://zaweli.store`.

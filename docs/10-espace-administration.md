@@ -86,7 +86,7 @@ L'administration est un **export statique** (`output: "export"`) : un dossier de
 
 1. **Adresses de production** : créer `apps/admin/.env.production.local` (jamais commité). Il prime sur `.env` au build :
    ```
-   NEXT_PUBLIC_API_URL=https://api.zaweli.store
+   NEXT_PUBLIC_API_URL=https://zaweli.store
    NEXT_PUBLIC_SUPABASE_URL=https://<projet>.supabase.co
    NEXT_PUBLIC_SUPABASE_ANON_KEY=<clé publishable>
    NEXT_PUBLIC_SITE_URL=https://zaweli.store

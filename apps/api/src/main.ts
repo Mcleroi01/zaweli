@@ -1,8 +1,6 @@
-import { ConsoleLogger, Logger } from "@nestjs/common";
-import { NestFactory } from "@nestjs/core";
-import { AppModule } from "./app.module.js";
-import { configureApp } from "./app.setup.js";
+import { Logger } from "@nestjs/common";
 import { ENV, type Env } from "./config/env.js";
+import { createApp } from "./create-app.js";
 
 // En local, lit apps/api/.env (généré par `pnpm env:local`).
 // En production, les variables viennent de l'hébergeur.
@@ -14,12 +12,7 @@ if (process.env.NODE_ENV !== "production") {
   }
 }
 
-const app = await NestFactory.create(AppModule, {
-  // Corps brut conservé pour vérifier la signature des webhooks MbiyoPay.
-  rawBody: true,
-  logger: new ConsoleLogger({ json: process.env.NODE_ENV === "production", prefix: "zaweli-api" }),
-});
-configureApp(app);
+const app = await createApp();
 
 const env = app.get<Env>(ENV);
 await app.listen(env.PORT);

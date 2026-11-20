@@ -1,4 +1,4 @@
-# ZAWELI — Déploiement de l'API (api.zaweli.store)
+# ZAWELI — Déploiement de l'API sur Hostinger
 
 > Statut : **prêt, à déployer**.
 > Date : 20 novembre 2026.
@@ -6,11 +6,20 @@
 
 ---
 
-## 1. Pourquoi
+## 1. Le principe : une seule application Node.js
 
-Le site et l'administration ne font que **lire et écrire via l'API** (`/v1/…`). Sans elle, l'espace client répond 404 sur `/v1/me/profile`, et l'administration ne peut ni se connecter ni charger de données.
+Hostinger n'accepte qu'**une** application Node.js, celle de `zaweli.store`. L'API tourne donc **dans le même processus que le site** :
 
-Le site de production a été construit avec une adresse d'API qui pointe vers `zaweli.store` lui-même : ses appels arrivent sur le site Next.js, qui n'a pas de route `/v1`.
+- `apps/web/server.mjs` sert le site (Next.js) ;
+- il monte l'API (NestJS, `apps/api/dist`) sous **`https://zaweli.store/v1/…`**.
+
+Il n'y a **pas** de sous-domaine `api.zaweli.store` : le sous-domaine et son dossier `public_html/api` peuvent être supprimés dans hPanel.
+
+| Situation | Comportement |
+| --- | --- |
+| `DATABASE_URL` absente | Le site fonctionne, l'API n'est pas montée, `/v1/…` répond 503. |
+| Configuration de l'API invalide | Le site **reste en ligne**. `/v1/…` répond 503, et le journal dit quelle variable pose problème (`API non montée : Configuration invalide : …`). |
+| Tout est réglé | Le journal affiche `API montée sous /v1.` |
 
 ## 2. Prérequis (une fois)
 
@@ -20,45 +29,39 @@ Le site de production a été construit avec une adresse d'API qui pointe vers `
    create role zaweli_api_login login password '<secret fort>' in role zaweli_api;
    ```
    L'API refuse de démarrer en production avec `postgres`.
-3. **Sous-domaine** : ne PAS créer `api.zaweli.store` comme simple dossier, ce que vous aviez fait pour l'administration. C'est l'application Node.js de l'étape 3 qui doit le créer ou s'y rattacher. S'il existe déjà comme dossier dans hPanel, le supprimer d'abord.
 
-## 3. Application Node.js sur Hostinger
-
-hPanel → **Sites web → Ajouter → Application Node.js**, depuis le même dépôt GitHub que le site :
+## 3. Réglages de l'application `zaweli.store` (hPanel → Node.js)
 
 | Champ | Valeur |
 | --- | --- |
-| Domaine | `api.zaweli.store` |
-| Version de Node | 22 ou 24 |
-| Gestionnaire de paquets | pnpm |
-| Dossier racine | la racine du dépôt (pas `apps/api`) : l'API utilise les paquets partagés |
-| Commande de build | `pnpm exec turbo run build --filter=@zaweli/api` |
-| Fichier d'entrée | `apps/api/server.mjs` |
+| Commande de build | `pnpm exec turbo run build --filter=@zaweli/web --filter=@zaweli/api`, ou `pnpm build`, qui construit tout le dépôt |
+| Fichier d'entrée | `apps/web/server.mjs` (inchangé) |
 
-`server.mjs` met `NODE_ENV=production` si l'hébergeur ne le fait pas, puis lance `apps/api/dist/main.js`.
+Si la commande de build ne construit que le site, le journal affiche `apps/api/dist manquant`.
 
-**Ne réglez pas `NODE_ENV` vous-même** : si `NODE_ENV=production` est posée pendant l'installation, pnpm saute les dépendances de développement, et le build (Nest CLI, TypeScript, Turbo) échoue.
+**Ne réglez pas `NODE_ENV` vous-même** : posée pendant l'installation, elle fait sauter les outils de build. `server.mjs` la met à `production` au démarrage.
 
-## 4. Variables d'environnement
+## 4. Variables d'environnement (même application)
 
-La liste complète, commentée, est dans [`apps/api/.env.example`](../apps/api/.env.example). En production, le fichier `.env` n'est **pas** lu : saisissez les variables dans le panneau de l'application.
-
-Minimum pour démarrer :
+La liste complète, commentée, est dans [`apps/api/.env.example`](../apps/api/.env.example). Elles s'ajoutent à celles du site, dans le panneau de la même application.
 
 | Variable | Valeur |
 | --- | --- |
-| `DATABASE_URL` | `postgresql://zaweli_api_login.<ref-projet>:<secret>@<hôte-pooler>:5432/postgres`. Supabase → Connect → **Session pooler** ; Hostinger ne joint pas toujours l'adresse IPv6 directe `db.<ref>.supabase.co`. |
+| `NEXT_PUBLIC_API_URL` | **`https://zaweli.store`**, l'adresse du site lui-même. Gravée au build : redéployer après l'avoir changée. |
+| `DATABASE_URL` | `postgresql://zaweli_api_login.<ref-projet>:<secret>@<hôte-pooler>:5432/postgres`. Supabase → Connect → **Session pooler** ; Hostinger ne joint pas toujours l'adresse IPv6 directe. |
 | `SUPABASE_URL` | `https://<ref-projet>.supabase.co` |
 | `CORS_ORIGINS` | `https://zaweli.store,https://www.zaweli.store,https://admin.zaweli.store` |
 | `PUBLIC_WEB_URL` | `https://zaweli.store` |
-| `PUBLIC_API_URL` | `https://api.zaweli.store` |
+| `PUBLIC_API_URL` | `https://zaweli.store` |
 | `TRUST_PROXY` | `2` (CDN de Hostinger + serveur web) |
 
 Ensuite, selon les fonctions voulues : `SUPABASE_SECRET_KEY` (photos, suspension des comptes), `MBIYOPAY_*` (paiements), `OPENROUTER_*` (aide à l'écriture), `SMTP_URL` (e-mails).
 
+`PORT` n'est pas à régler pour l'API : c'est celui du site qui sert.
+
 ### À propos de `TRUST_PROXY`
 
-Derrière Hostinger, l'API ne voit que l'adresse du mandataire. Sans ce réglage, **tous les visiteurs partagent la même limite** de 120 requêtes par minute, et le site se bloque dès qu'il y a du monde. Ce réglage dit combien de mandataires précèdent l'API :
+Derrière Hostinger, l'API ne voit que l'adresse du mandataire. Sans ce réglage, **tous les visiteurs partagent la même limite** de 120 requêtes par minute. Ce réglage dit combien de mandataires précèdent l'API :
 - s'il est trop bas, la limite reste partagée ;
 - s'il est trop haut, un visiteur peut se faire passer pour un autre et contourner la limite.
 
@@ -67,28 +70,33 @@ Derrière Hostinger, l'API ne voit que l'adresse du mandataire. Sans ce réglage
 ## 5. Vérifier
 
 ```
-curl https://api.zaweli.store/v1/health
+curl https://zaweli.store/v1/health
 ```
 
 Réponse attendue : `200` avec `"database": { "status": "ok" }`.
-- `503` : l'API tourne mais la base ne répond pas (vérifier `DATABASE_URL`, le rôle et le pooler).
-- Pas de réponse : voir les journaux de l'application dans hPanel. Une configuration invalide y est détaillée variable par variable (`Configuration invalide : …`).
+- `503` avec `"database": { "status": "down" }` : l'API tourne, mais la base ne répond pas. Vérifier `DATABASE_URL`, le rôle et le pooler.
+- `503` avec `SERVICE_UNAVAILABLE` : l'API n'est pas montée. La raison est dans le journal de l'application.
 
-## 6. Rebrancher le site et l'administration
+## 6. Administration et services externes
 
-Les adresses `NEXT_PUBLIC_*` sont **gravées au build** : il faut reconstruire les deux.
-1. **Site** (application `zaweli.store`) : `NEXT_PUBLIC_API_URL=https://api.zaweli.store`, puis redéployer.
-2. **Administration** : même valeur dans `apps/admin/.env.production.local`, puis rebuild et dépôt de `out/` (doc 10 §7).
-3. **Supabase Auth → URL Configuration** : Site URL `https://zaweli.store`, redirections `https://zaweli.store/**` et `https://admin.zaweli.store/**`.
-4. **MbiyoPay** (si utilisé) : adresse du webhook `https://api.zaweli.store/v1/webhooks/mbiyopay`.
+1. **Administration** : `NEXT_PUBLIC_API_URL=https://zaweli.store` dans `apps/admin/.env.production.local`, puis rebuild et dépôt de `out/` dans `public_html/admin` (doc 10 §7).
+2. **Supabase Auth → URL Configuration** : Site URL `https://zaweli.store`, redirections `https://zaweli.store/**` et `https://admin.zaweli.store/**`.
+3. **MbiyoPay** (si utilisé) : adresse du webhook `https://zaweli.store/v1/webhooks/mbiyopay`.
 
-## 7. Vérifications exécutées (local)
+## 7. Hébergeur dédié (plus tard)
+
+Si l'API part un jour sur sa propre machine, `apps/api/server.mjs` la lance seule, sur `PORT`. Il suffira de changer `NEXT_PUBLIC_API_URL` et `PUBLIC_API_URL`, puis de retirer `DATABASE_URL` de l'application du site.
+
+## 8. Vérifications exécutées (local)
 
 | Vérification | Résultat |
 | --- | --- |
-| `turbo run build --filter=@zaweli/api` | 5 tâches réussies (paquets partagés et API) |
-| `vitest run` (API) | 92 tests réussis, dont la lecture de `TRUST_PROXY` |
-| `node apps/api/server.mjs` sans `NODE_ENV` | Démarre en production : journaux JSON, `/v1/health` → 503 sans base. Sans `CORS_ORIGINS`, refuse de démarrer avec un message clair. |
-| `apps/api/.env.example` contre la validation | Accepté en développement et en production |
+| Build du site et de l'API | Réussi |
+| `vitest run` (API) | 92 tests réussis |
+| `node apps/web/server.mjs`, avec les variables de l'API | <ul><li>Journal « API montée sous /v1 ».</li><li>`/v1/health` → 503 JSON (aucune base locale), `/v1/me/profile` → 401 sans jeton.</li><li>Pré-requête CORS depuis `admin.zaweli.store` → 204 avec la bonne origine.</li><li>`/`, `/tarifs`, `/llms.txt` → 200.</li></ul> |
+| Même chose avec une configuration invalide | Le site répond 200, `/v1/health` répond 503, et le journal donne la raison. |
 
-**Non vérifié** : le déploiement réel sur Hostinger (installation pnpm du monorepo, joignabilité du pooler Supabase, nombre réel de mandataires).
+**Non vérifié** :
+- le déploiement réel sur Hostinger ;
+- la joignabilité du pooler Supabase depuis Hostinger ;
+- le nombre réel de mandataires.
