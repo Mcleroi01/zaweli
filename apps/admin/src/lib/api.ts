@@ -6,7 +6,13 @@ import type {
   AdminExchangeRateRequest,
   AdminExchangeRatesResponse,
   AdminGeoResponse,
+  AdminOrderRow,
   AdminOverviewResponse,
+  AdminPaymentSettingsRequest,
+  AdminPaymentSettingsResponse,
+  AdminReconcileResponse,
+  AdminReferrerRow,
+  AdminTransferRow,
   AdminSubscriptionsResponse,
   AdminTimeseriesResponse,
   ApiError,
@@ -29,6 +35,12 @@ export interface AdminApi {
   exchangeRates(): Promise<AdminExchangeRatesResponse>;
   addExchangeRate(body: AdminExchangeRateRequest): Promise<AdminExchangeRatesResponse>;
   setReferenceCurrency(currency: string): Promise<AdminExchangeRatesResponse>;
+  paymentSettings(): Promise<AdminPaymentSettingsResponse>;
+  updatePaymentSettings(body: AdminPaymentSettingsRequest): Promise<AdminPaymentSettingsResponse>;
+  paymentOrders(status?: string): Promise<AdminOrderRow[]>;
+  paymentTransfers(status?: string): Promise<AdminTransferRow[]>;
+  reconcilePayments(): Promise<AdminReconcileResponse>;
+  referrers(): Promise<AdminReferrerRow[]>;
 }
 
 export class ApiRequestError extends Error {
@@ -79,5 +91,11 @@ export function createHttpApi(getToken: () => Promise<string | null>): AdminApi 
     exchangeRates: () => call("GET", "/admin/exchange-rates"),
     addExchangeRate: (body) => call("POST", "/admin/exchange-rates", undefined, body),
     setReferenceCurrency: (currency) => call("PUT", "/admin/exchange-rates/reference", undefined, { currency }),
+    paymentSettings: () => call("GET", "/admin/payments/settings"),
+    updatePaymentSettings: (body) => call("PUT", "/admin/payments/settings", undefined, body),
+    paymentOrders: (status) => call("GET", "/admin/payments/orders", { status }),
+    paymentTransfers: (status) => call("GET", "/admin/payments/transfers", { status }),
+    reconcilePayments: () => call("POST", "/admin/payments/reconcile", undefined, {}),
+    referrers: () => call("GET", "/admin/payments/referrers"),
   };
 }

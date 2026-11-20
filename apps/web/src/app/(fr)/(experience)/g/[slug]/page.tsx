@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
-import type { PublicPayload } from "@zaweli/template-engine/schema";
-import { ExperienceView } from "@/experiences/registry";
+import { CodeGate, LiveExperience, OpensLater } from "@/components/experience/live-experience";
 import { fetchPublicExperience } from "@/lib/api";
 
 /**
@@ -18,16 +17,11 @@ export const metadata: Metadata = {
 
 async function Experience({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const experience = await fetchPublicExperience(slug);
-  if (!experience) notFound();
-  return (
-    <ExperienceView
-      rendererKey={experience.rendererKey}
-      payload={experience.payload as unknown as PublicPayload}
-      mode="live"
-      storageKey={`zw:progress:${slug}`}
-    />
-  );
+  const state = await fetchPublicExperience(slug);
+  if (!state) notFound();
+  if (state.kind === "locked") return <CodeGate slug={slug} />;
+  if (state.kind === "later") return <OpensLater availableFrom={state.availableFrom} />;
+  return <LiveExperience slug={slug} experience={state.experience} />;
 }
 
 export default function ExperiencePage({ params }: PageProps<"/g/[slug]">) {

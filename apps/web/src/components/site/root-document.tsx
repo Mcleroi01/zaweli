@@ -5,6 +5,7 @@ import type { Locale } from "@zaweli/shared-types";
 import { SITE_URL } from "@/content/site";
 import { getDictionary } from "@/i18n/dictionaries";
 import { localePath, OG_LOCALE } from "@/i18n/routing";
+import { ReferralCapture } from "./referral-capture";
 import "@/app/globals.css";
 
 const instrument = Instrument_Sans({ variable: "--font-instrument", subsets: ["latin"], display: "swap" });
@@ -51,7 +52,10 @@ export const rootViewport: Viewport = {
 export function RootDocument({ locale, children }: { locale: Locale; children: ReactNode }) {
   return (
     <html lang={locale} className={`${instrument.variable} ${fraunces.variable} h-full antialiased`}>
-      <body className="flex min-h-full flex-col">{children}</body>
+      <body className="flex min-h-full flex-col">
+        {children}
+        <ReferralCapture />
+      </body>
     </html>
   );
 }

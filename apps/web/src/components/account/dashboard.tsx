@@ -2,6 +2,7 @@
 
 import { COUNTRY_CODES, type ExperienceSummaryResponse, type LicenseResponse, type Locale, type RecipientResponse } from "@zaweli/shared-types";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { type FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import { ApiRequestError, getSupabase, publicOrigin } from "@/account/client";
 import { useAccount } from "@/account/session";
@@ -99,6 +100,7 @@ function ExperienceRow({ e, onChanged }: { e: ExperienceSummaryResponse; onChang
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showQr, setShowQr] = useState(false);
+  const [duplicating, setDuplicating] = useState(false);
   const act = async (work: () => Promise<unknown>) => {
     setBusy(true);
     setError(null);
@@ -147,6 +149,11 @@ function ExperienceRow({ e, onChanged }: { e: ExperienceSummaryResponse; onChang
               {t.experiences.enable}
             </Button>
           )}
+          {e.status !== "suspended" && (
+            <Button variant="quiet" aria-expanded={duplicating} onClick={() => setDuplicating((v) => !v)}>
+              {t.experiences.duplicate}
+            </Button>
+          )}
           {(e.status === "draft" || e.status === "disabled") && (
             <Button variant="danger" disabled={busy} onClick={() => window.confirm(t.experiences.confirmRemove) && act(() => api.removeExperience(e.id))}>
               {t.experiences.remove}
@@ -154,6 +161,7 @@ function ExperienceRow({ e, onChanged }: { e: ExperienceSummaryResponse; onChang
           )}
         </div>
       </div>
+      {duplicating && <DuplicateForm experienceId={e.id} onCancel={() => setDuplicating(false)} />}
       {showQr && e.slug && e.status === "published" && (
         <div className="mt-4 rounded-xl border border-line bg-surface p-4">
           <QrCode url={publicUrl(e.slug)} slug={e.slug} />
@@ -165,6 +173,55 @@ function ExperienceRow({ e, onChanged }: { e: ExperienceSummaryResponse; onChang
         </div>
       )}
     </li>
+  );
+}
+
+/** Nouvelle expérience pour une autre personne : même modèle et même contenu, nouveau brouillon. */
+function DuplicateForm({ experienceId, onCancel }: { experienceId: string; onCancel: () => void }) {
+  const { t, api, path } = useAccount();
+  const router = useRouter();
+  const recipients = useResource(useCallback(() => api.recipients(), [api]));
+  const [recipientId, setRecipientId] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const submit = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!recipientId) return;
+    setBusy(true);
+    setError(null);
+    try {
+      const copy = await api.duplicate(experienceId, recipientId);
+      router.push(path(`/espace/brouillon/${copy.id}`));
+    } catch (err) {
+      setError(err instanceof ApiRequestError && err.message ? err.message : t.common.unavailable);
+      setBusy(false);
+    }
+  };
+  return (
+    <form onSubmit={submit} className="mt-4 space-y-3 rounded-xl border border-line bg-surface p-4">
+      <p className="text-[0.92rem]">{t.experiences.duplicateLead}</p>
+      <Field label={t.experiences.duplicateFor}>
+        {(p) => (
+          <Select {...p} value={recipientId} onChange={(ev) => setRecipientId(ev.target.value)} required>
+            <option value="">—</option>
+            {recipients.data?.map((r) => (
+              <option key={r.id} value={r.id}>
+                {r.displayName}
+              </option>
+            ))}
+          </Select>
+        )}
+      </Field>
+      {error && <Banner tone="danger">{error}</Banner>}
+      <div className="flex gap-2">
+        <Button type="submit" disabled={busy || !recipientId}>
+          {busy ? t.common.saving : t.experiences.duplicateSubmit}
+        </Button>
+        <Button variant="quiet" onClick={onCancel}>
+          {t.common.cancel}
+        </Button>
+      </div>
+    </form>
   );
 }
 
@@ -417,7 +474,17 @@ export function LicensesView() {
   const licenses = useResource(useCallback(() => api.licenses(), [api]));
   return (
     <div className="space-y-8">
-      <PageTitle title={t.licenses.title} action={<ButtonLink variant="secondary" href={path("/tarifs")}>{t.common.seePlans}</ButtonLink>} />
+      <PageTitle
+        title={t.licenses.title}
+        action={
+          <div className="flex flex-wrap gap-2">
+            <ButtonLink href={path("/espace/acheter")}>{t.purchase.title}</ButtonLink>
+            <ButtonLink variant="secondary" href={path("/espace/achats")}>
+              {t.nav.orders}
+            </ButtonLink>
+          </div>
+        }
+      />
       {licenses.error && <ErrorBanner error={licenses.error} onRetry={licenses.reload} />}
       {licenses.data?.length === 0 && <EmptyState title={t.licenses.empty} text={t.overview.noLicense} />}
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -444,6 +511,8 @@ export function SettingsView() {
   const profile = state.kind === "signed-in" ? state.profile : null;
   const [name, setName] = useState(profile?.displayName ?? "");
   const [language, setLanguage] = useState<Locale>(profile?.locale ?? "fr");
+  const [news, setNews] = useState(profile?.marketingOptIn ?? false);
+  const [expiry, setExpiry] = useState(profile?.notifyLicenseExpiry ?? true);
   // Un pays seulement détecté n'est pas un choix : le champ reste « Non précisé » jusqu'à ce que la personne choisisse.
   const [country, setCountry] = useState(profile?.countrySource === "declared" ? (profile.countryCode ?? "") : "");
   const countries = useMemo(() => countryOptions(language), [language]);
@@ -457,6 +526,8 @@ export function SettingsView() {
       await api.updateProfile({
         displayName: name.trim() || null,
         locale: language,
+        marketingOptIn: news,
+        notifyLicenseExpiry: expiry,
         // Envoyé seulement s'il change : null efface le choix et laisse l'API déduire le pays de la connexion.
         ...(country !== declared ? { countryCode: country || null } : {}),
       });
@@ -504,6 +575,18 @@ export function SettingsView() {
               </Select>
             )}
           </Field>
+          <fieldset className="space-y-2">
+            <legend className="text-[0.92rem]">{t.settings.emails}</legend>
+            <p className="text-[0.84rem] text-muted">{t.settings.emailsHint}</p>
+            <label className="flex min-h-11 items-center gap-3 text-[0.95rem]">
+              <input type="checkbox" className="h-5 w-5 accent-[var(--color-primary)]" checked={expiry} onChange={(e) => setExpiry(e.target.checked)} />
+              {t.settings.notifyExpiry}
+            </label>
+            <label className="flex min-h-11 items-center gap-3 text-[0.95rem]">
+              <input type="checkbox" className="h-5 w-5 accent-[var(--color-primary)]" checked={news} onChange={(e) => setNews(e.target.checked)} />
+              {t.settings.notifyNews}
+            </label>
+          </fieldset>
           {message && <Banner tone={message.tone}>{message.text}</Banner>}
           <Button type="submit" disabled={busy}>
             {busy ? t.common.saving : t.common.save}
@@ -529,6 +612,74 @@ export function SettingsView() {
           </Button>
         </div>
       </section>
+      <DataSection email={email ?? ""} />
     </div>
+  );
+}
+
+/** Mes données : export (JSON) et suppression du compte, confirmée en retapant l'adresse. */
+function DataSection({ email }: { email: string }) {
+  const { t, api, signOut } = useAccount();
+  const [confirm, setConfirm] = useState("");
+  const [open, setOpen] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const download = async () => {
+    setError(null);
+    try {
+      const data = await api.exportData();
+      const url = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], { type: "application/json" }));
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "zaweli-mes-donnees.json";
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    } catch (err) {
+      setError(err instanceof ApiRequestError && err.message ? err.message : t.common.unavailable);
+    }
+  };
+  const remove = async (e: FormEvent) => {
+    e.preventDefault();
+    setBusy(true);
+    setError(null);
+    try {
+      await api.deleteAccount(confirm.trim());
+      await signOut();
+    } catch (err) {
+      setError(err instanceof ApiRequestError && err.message ? err.message : t.common.unavailable);
+      setBusy(false);
+    }
+  };
+  return (
+    <section className="space-y-4 border-t border-line pt-8">
+      <h2 className="kicker text-muted">{t.settings.data}</h2>
+      <div>
+        <Button variant="secondary" onClick={() => void download()}>
+          {t.settings.export}
+        </Button>
+        <p className="mt-2 text-[0.84rem] text-muted">{t.settings.exportHint}</p>
+      </div>
+      {!open ? (
+        <Button variant="danger" onClick={() => setOpen(true)}>
+          {t.settings.deleteAccount}
+        </Button>
+      ) : (
+        <form onSubmit={remove} className="space-y-3 rounded-xl border border-danger/30 bg-danger/5 p-4">
+          <p className="text-[0.92rem]">{t.settings.deleteWarning}</p>
+          <Field label={t.settings.deleteConfirm(email)}>
+            {(p) => <TextInput {...p} type="email" autoComplete="off" value={confirm} onChange={(e) => setConfirm(e.target.value)} />}
+          </Field>
+          <div className="flex gap-2">
+            <Button type="submit" variant="danger" disabled={busy || confirm.trim().toLowerCase() !== email.toLowerCase()}>
+              {busy ? t.common.saving : t.settings.deleteSubmit}
+            </Button>
+            <Button variant="quiet" onClick={() => setOpen(false)}>
+              {t.common.cancel}
+            </Button>
+          </div>
+        </form>
+      )}
+      {error && <Banner tone="danger">{error}</Banner>}
+    </section>
   );
 }

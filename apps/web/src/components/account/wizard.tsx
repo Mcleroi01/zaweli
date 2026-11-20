@@ -7,6 +7,7 @@ import type {
   PublishResponse,
   TemplateDetailResponse,
 } from "@zaweli/shared-types";
+import { MOBILE_MONEY_COUNTRIES } from "@zaweli/shared-types";
 import type { FieldDef, GiftListField, RiddleListField } from "@zaweli/template-engine/schema";
 import Link from "next/link";
 import { useParams } from "next/navigation";
@@ -15,6 +16,10 @@ import { ApiRequestError } from "@/account/client";
 import { FullPageStatus, RequireSession, useAccount } from "@/account/session";
 import { templateLabels } from "@/i18n/template-fields";
 import { CopyButton, ErrorBanner, publicUrl } from "./dashboard";
+import { AiSuggest } from "./ai-suggest";
+import { ExperienceSettingsPanel } from "./experience-settings";
+import { GiftFundingPanel } from "./gift-funding";
+import { MediaProvider, PhotoInput, PhotoListInput, type PhotoValue } from "./photo-field";
 import { QrCode } from "./qr-code";
 import { Banner, Button, ButtonLink, Card, Field, Select, TextArea, TextInput } from "./ui";
 
@@ -49,8 +54,11 @@ function cleanFields(defs: Record<string, FieldDef>, fields: Fields): Fields {
         out[id] = (value as Array<{ title: string; text: string }>).filter((e) => e.title.trim() !== "");
         break;
       case "photo":
+        if ((value as PhotoValue).mediaId) out[id] = value;
+        break;
       case "photoList":
-        break; // L'envoi des photos arrive avec le lot « Médias ».
+        out[id] = (value as PhotoValue[]).filter((x) => x.mediaId);
+        break;
       default:
         out[id] = value;
     }
@@ -115,7 +123,7 @@ function RiddleEditor({
   onChange: (v: unknown) => void;
 }) {
   const { t } = useAccount();
-  type Riddle = { question: string; choices: string[]; answer: number; hint?: string; reveal: string };
+  type Riddle = { question: string; choices: string[]; answer: number; hint?: string; photo?: PhotoValue; reveal: string };
   const riddles = (value as Riddle[] | undefined) ?? [];
   const blank = (): Riddle => ({
     question: "",
@@ -193,7 +201,14 @@ function RiddleEditor({
               />
             )}
           </Field>
-          <p className="text-[0.85rem] text-muted">{t.wizard.photosSoon}</p>
+          <PhotoInput
+            label={t.photos.riddlePhoto}
+            value={r.photo}
+            ratio={def.photo.ratio}
+            required={def.photo.required}
+            defaultAlt={t.photos.riddleAlt(i + 1)}
+            onChange={(photo) => set(i, { photo })}
+          />
         </Card>
       ))}
       {riddles.length < def.max && (
@@ -206,11 +221,13 @@ function RiddleEditor({
 }
 
 function FieldInput({
+  fieldId,
   def,
   value,
   onChange,
   labels: rawLabels,
 }: {
+  fieldId: string;
   def: FieldDef;
   value: unknown;
   onChange: (v: unknown) => void;
@@ -234,7 +251,10 @@ function FieldInput({
           counter={t.wizard.counter(text.length, def.max)}
         >
           {(p) => (
-            <Input {...p} maxLength={def.max} value={text} onChange={(e) => onChange(e.target.value)} />
+            <>
+              <Input {...p} maxLength={def.max} value={text} onChange={(e) => onChange(e.target.value)} />
+              {def.aiAssist && <AiSuggest fieldId={fieldId} long={def.kind === "longText"} onAccept={(s) => onChange(s)} />}
+            </>
           )}
         </Field>
       );
@@ -288,19 +308,30 @@ function FieldInput({
         </label>
       );
     case "photo":
-    case "photoList":
       return (
         <div>
-          <p className="text-[0.92rem]">
-            {labels.label}
-            {def.kind === "photo" && def.required && (
-              <span className="ml-1.5 text-[0.82rem] text-muted">({t.wizard.required})</span>
-            )}
-          </p>
-          <div className="mt-2 rounded-xl border border-dashed border-line bg-paper px-4 py-6 text-center text-[0.88rem] text-muted">
-            {t.wizard.photosSoon}
-          </div>
+          <PhotoInput
+            label={labels.label}
+            value={value as PhotoValue | undefined}
+            ratio={def.ratio}
+            required={def.required}
+            defaultAlt={labels.label}
+            onChange={(v) => onChange(v)}
+          />
+          {labels.help && <p className="mt-1.5 text-[0.84rem] text-muted">{labels.help}</p>}
         </div>
+      );
+    case "photoList":
+      return (
+        <PhotoListInput
+          label={labels.label}
+          value={(value as PhotoValue[] | undefined) ?? []}
+          min={def.min}
+          max={def.max}
+          captionMax={def.captionMax}
+          defaultAlt={labels.label}
+          onChange={(v) => onChange(v)}
+        />
       );
     case "wordList":
     case "textList": {
@@ -405,6 +436,8 @@ type GiftInput = {
 };
 
 const CURRENCIES = ["CDF", "USD", "EUR", "XAF", "XOF", "GBP", "CAD", "ZAR", "NGN", "KES"];
+/** Devises qu'un transfert via Zaweli peut encaisser et reverser (mobile money, docs/12). */
+const TRANSFER_CURRENCIES = [...new Set(MOBILE_MONEY_COUNTRIES.flatMap((c) => c.currencies.map((x) => x.code)))];
 
 const GIFT_FORMS: Record<string, GiftInput[]> = {
   MONEY: [
@@ -457,21 +490,31 @@ const dataKey = (type: string, key: string) => (type === "EXPERIENCE" && key ===
 
 function GiftForm({
   type,
+  transfersEnabled,
   onAdd,
   onCancel,
 }: {
   type: string;
+  transfersEnabled: boolean;
   onAdd: (data: Record<string, unknown>, protectedData?: Record<string, unknown>) => Promise<void>;
   onCancel: () => void;
 }) {
   const { t } = useAccount();
   const fieldsT = t.gifts.fields as unknown as Record<string, string> & { reception: Record<string, string> };
-  const inputs = GIFT_FORMS[type] ?? [];
   const [values, setValues] = useState<Record<string, string>>(() =>
     type === "MONEY" ? { currency: "USD", receptionMode: "in_person" } : ({} as Record<string, string>),
   );
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const transfer = type === "MONEY" && values.receptionMode === "zaweli_transfer";
+  // Le transfert via Zaweli n'est proposé que s'il est ouvert ; il limite les devises à celles du mobile money.
+  const inputs = (GIFT_FORMS[type] ?? []).map((i) =>
+    i.key === "receptionMode" && transfersEnabled
+      ? { ...i, options: [...i.options!, "zaweli_transfer"] }
+      : i.key === "currency" && transfer
+        ? { ...i, options: TRANSFER_CURRENCIES }
+        : i,
+  );
   const missing = inputs.some((i) => i.required && !values[i.key]?.trim());
 
   const submit = async () => {
@@ -497,11 +540,17 @@ function GiftForm({
   return (
     <Card className="space-y-4 p-5">
       <p className="font-display text-[1.3rem]">{t.gifts.types[type as keyof typeof t.gifts.types].name}</p>
-      <Banner tone="info">{t.gifts.truth[type as keyof typeof t.gifts.truth]}</Banner>
+      <Banner tone="info">{transfer ? t.funding.truth : t.gifts.truth[type as keyof typeof t.gifts.truth]}</Banner>
       {inputs.map((input) => {
         const label = fieldsT[input.key] ?? input.key;
         const value = values[input.key] ?? "";
-        const set = (v: string) => setValues((s) => ({ ...s, [input.key]: v }));
+        const set = (v: string) =>
+          setValues((s) => {
+            const next = { ...s, [input.key]: v };
+            // Passer au transfert via Zaweli : la devise doit être payable par mobile money.
+            if (input.key === "receptionMode" && v === "zaweli_transfer" && !TRANSFER_CURRENCIES.includes(next.currency ?? "")) next.currency = "USD";
+            return next;
+          });
         return (
           <Field
             key={input.key}
@@ -562,11 +611,15 @@ function giftSummary(g: GiftResponse): string {
 function GiftStep({
   def,
   gifts,
+  experienceId,
+  onChanged,
   onAdd,
   onRemove,
 }: {
   def: GiftListField;
   gifts: GiftResponse[];
+  experienceId: string;
+  onChanged: () => void;
   onAdd: (
     type: string,
     data: Record<string, unknown>,
@@ -574,9 +627,20 @@ function GiftStep({
   ) => Promise<void>;
   onRemove: (id: string) => Promise<void>;
 }) {
-  const { t } = useAccount();
+  const { t, api } = useAccount();
   const [type, setType] = useState<string | null>(null);
+  const [transfersEnabled, setTransfersEnabled] = useState(false);
   const full = gifts.length >= def.max;
+  useEffect(() => {
+    let alive = true;
+    void api
+      .paymentOptions()
+      .then((o) => alive && setTransfersEnabled(o.moneyTransfers.enabled))
+      .catch(() => undefined);
+    return () => {
+      alive = false;
+    };
+  }, [api]);
   return (
     <div className="space-y-5">
       <p className="text-[0.95rem] text-muted">{t.gifts.lead(def.min, def.max)}</p>
@@ -590,11 +654,21 @@ function GiftStep({
                   {i + 1} · {t.gifts.types[g.type as keyof typeof t.gifts.types]?.name ?? g.type}
                 </p>
                 <p className="mt-1 font-display text-[1.15rem]">{giftSummary(g)}</p>
+                {g.type === "MONEY" && t.funding.status[g.status] && <p className="mt-1 text-[0.85rem] text-muted">{t.funding.status[g.status]}</p>}
               </div>
-              <Button variant="danger" onClick={() => onRemove(g.id)}>
-                {t.gifts.remove}
-              </Button>
+              {g.type === "MONEY" && !["ANNOUNCED", "AWAITING_FUNDING", "CANCELLED"].includes(g.status) ? (
+                <p className="text-[0.82rem] text-muted">{t.funding.locked}</p>
+              ) : (
+                <Button variant="danger" onClick={() => onRemove(g.id)}>
+                  {t.gifts.remove}
+                </Button>
+              )}
             </Card>
+            {g.type === "MONEY" && g.status === "AWAITING_FUNDING" && (
+              <div className="mt-2">
+                <GiftFundingPanel experienceId={experienceId} giftId={g.id} onFunded={onChanged} />
+              </div>
+            )}
           </li>
         ))}
       </ul>
@@ -623,6 +697,7 @@ function GiftStep({
       {type && (
         <GiftForm
           type={type}
+          transfersEnabled={transfersEnabled}
           onCancel={() => setType(null)}
           onAdd={async (data, secret) => {
             await onAdd(type, data, secret);
@@ -775,9 +850,11 @@ function Review({
                       {name}
                       {/* Message lisible plutôt que le détail technique de la validation. */}
                       <span className="ml-2 text-muted">
-                        {/received undefined|too_small|>=/i.test(issue.message)
-                          ? t.wizard.incomplete
-                          : t.wizard.invalid}
+                        {issue.message === "MONEY_GIFT_UNFUNDED"
+                          ? t.wizard.unfunded
+                          : /received undefined|too_small|>=/i.test(issue.message)
+                            ? t.wizard.incomplete
+                            : t.wizard.invalid}
                       </span>
                     </span>
                     {step >= 0 && (
@@ -792,6 +869,8 @@ function Review({
         )}
       </section>
 
+      <ExperienceSettingsPanel detail={fresh} onChange={setFresh} />
+
       {!republish && eligibility && (
         <section>
           <h3 className="kicker text-muted">{t.publish.license}</h3>
@@ -800,7 +879,7 @@ function Review({
               <Banner
                 tone="warning"
                 action={
-                  <ButtonLink variant="quiet" href={path("/tarifs")}>
+                  <ButtonLink variant="quiet" href={path("/espace/acheter")}>
                     {t.common.seePlans}
                   </ButtonLink>
                 }
@@ -846,7 +925,7 @@ function Review({
           tone="danger"
           action={
             error.plans ? (
-              <ButtonLink variant="quiet" href={path("/tarifs")}>
+              <ButtonLink variant="quiet" href={path("/espace/acheter")}>
                 {t.common.seePlans}
               </ButtonLink>
             ) : undefined
@@ -1050,6 +1129,7 @@ function Wizard() {
   }[save];
 
   return (
+    <MediaProvider experienceId={id} mediaIds={mediaIdsOf(fields)}>
     <div className="min-h-svh bg-canvas">
       {/* Création : pas de navigation globale (docs/05 §4.2). */}
       <header className="sticky top-0 z-30 border-b border-line bg-paper/[0.98]">
@@ -1064,13 +1144,24 @@ function Wizard() {
           <p className="truncate font-display text-[1.1rem]">
             {template.name} · {detail.recipient.displayName}
           </p>
-          <p
-            role="status"
-            aria-live="polite"
-            className={`min-w-24 text-right text-[0.82rem] ${save === "error" || save === "conflict" ? "text-danger" : "text-muted"}`}
-          >
-            {saveLabel}
-          </p>
+          <div className="flex items-center gap-3">
+            <p
+              role="status"
+              aria-live="polite"
+              className={`min-w-24 text-right text-[0.82rem] ${save === "error" || save === "conflict" ? "text-danger" : "text-muted"}`}
+            >
+              {saveLabel}
+            </p>
+            {/* Aperçu dans un nouvel onglet, après enregistrement : le brouillon reste ouvert ici. */}
+            <Link
+              href={path(`/espace/apercu/${id}`)}
+              target="_blank"
+              onClick={() => void persist()}
+              className="inline-flex min-h-9 items-center rounded-full border border-ink/20 px-4 text-[0.85rem] hover:border-ink"
+            >
+              {t.preview.open}
+            </Link>
+          </div>
         </div>
       </header>
 
@@ -1170,6 +1261,8 @@ function Wizard() {
                         <GiftStep
                           def={def}
                           gifts={gifts}
+                          experienceId={id}
+                          onChanged={() => void giftOp(async () => undefined).catch(() => undefined)}
                           onAdd={(type, data, secret) =>
                             giftOp(() =>
                               api.addGift(id, {
@@ -1189,6 +1282,7 @@ function Wizard() {
                   return (
                     <div key={fieldId}>
                       <FieldInput
+                        fieldId={fieldId}
                         def={def}
                         value={fields[fieldId]}
                         labels={l}
@@ -1244,5 +1338,21 @@ function Wizard() {
         </div>
       </div>
     </div>
+    </MediaProvider>
   );
+}
+
+/** Identifiants des photos présentes dans le contenu (pour charger leurs vignettes). */
+function mediaIdsOf(fields: Fields): string[] {
+  const ids: string[] = [];
+  const visit = (v: unknown) => {
+    if (Array.isArray(v)) v.forEach(visit);
+    else if (v && typeof v === "object") {
+      const o = v as Record<string, unknown>;
+      if (typeof o.mediaId === "string") ids.push(o.mediaId);
+      Object.values(o).forEach((x) => typeof x === "object" && visit(x));
+    }
+  };
+  Object.values(fields).forEach(visit);
+  return ids;
 }

@@ -5,14 +5,30 @@ import type {
   ApiError,
   CreateExperienceRequest,
   CreateGiftRequest,
+  AiSuggestInput,
+  AiSuggestResponse,
+  CreateMediaUploadRequest,
+  CreateOrderInput,
   CreateRecipientRequest,
   EligibilityResponse,
   ExperienceDetailResponse,
+  ExperienceSettingsRequest,
+  MusicSearchResponse,
   ExperienceStatus,
   ExperienceSummaryResponse,
+  GiftFundingResponse,
   GiftResponse,
   LicenseResponse,
   Locale,
+  MediaResponse,
+  MediaUploadResponse,
+  MediaUrlsResponse,
+  MobileMoneyAccount,
+  OrderQuoteResponse,
+  OrderResponse,
+  PaymentOptionsResponse,
+  PlanResponse,
+  ReferralSummaryResponse,
   ProfileResponse,
   PublishExperienceRequest,
   PublishResponse,
@@ -66,14 +82,14 @@ export class ApiRequestError extends Error {
   }
 }
 
-type Method = "GET" | "POST" | "PATCH" | "DELETE";
+type Method = "GET" | "POST" | "PATCH" | "PUT" | "DELETE";
 
 /**
  * Client de l'API métier. Le jeton de la session Supabase accompagne chaque
  * appel ; la langue de la page choisit la langue des messages d'erreur.
  */
 export function createAccountApi(locale: Locale) {
-  async function call<T>(method: Method, path: string, body?: unknown): Promise<T> {
+  async function call<T>(method: Method, path: string, body?: unknown, headers?: Record<string, string>): Promise<T> {
     if (!API_URL) throw new ApiRequestError(503, "SERVICE_UNAVAILABLE", "API");
     const { data } = await getSupabase().auth.getSession();
     const token = data.session?.access_token;
@@ -86,6 +102,7 @@ export function createAccountApi(locale: Locale) {
           authorization: `Bearer ${token}`,
           "accept-language": locale,
           ...(body !== undefined ? { "content-type": "application/json" } : {}),
+          ...headers,
         },
         body: body !== undefined ? JSON.stringify(body) : undefined,
         cache: "no-store",
@@ -120,6 +137,12 @@ export function createAccountApi(locale: Locale) {
     experience: (id: string) => call<ExperienceDetailResponse>("GET", `/experiences/${id}`),
     updateExperience: (id: string, body: UpdateExperienceRequest) => call<ExperienceDetailResponse>("PATCH", `/experiences/${id}`, body),
     removeExperience: (id: string) => call<void>("DELETE", `/experiences/${id}`),
+    settings: (id: string, body: ExperienceSettingsRequest) => call<ExperienceDetailResponse>("PUT", `/experiences/${id}/settings`, body),
+    duplicate: (id: string, recipientId: string) => call<ExperienceDetailResponse>("POST", `/experiences/${id}/duplicate`, { recipientId }),
+    searchMusic: (q: string) => call<MusicSearchResponse>("GET", `/music/audius/search?q=${encodeURIComponent(q)}&limit=10`),
+    exportData: () => call<Record<string, unknown>>("GET", "/me/export"),
+    deleteAccount: (confirmEmail: string) => call<void>("DELETE", "/me", { confirmEmail }),
+    preview: (id: string) => call<{ rendererKey: string; payload: import("@zaweli/template-engine/schema").PublicPayload }>("GET", `/experiences/${id}/preview`),
     eligibility: (id: string) => call<EligibilityResponse>("GET", `/experiences/${id}/eligibility`),
     publish: (id: string, body: PublishExperienceRequest) => call<PublishResponse>("POST", `/experiences/${id}/publish`, body),
     setEnabled: (id: string, enabled: boolean) =>
@@ -132,6 +155,30 @@ export function createAccountApi(locale: Locale) {
       call<GiftResponse>("POST", `/experiences/${id}/gifts/${giftId}/status`, { status }),
 
     licenses: () => call<LicenseResponse[]>("GET", "/licenses"),
+
+    // Aide à l'écriture (docs/15)
+    aiSuggest: (body: AiSuggestInput) => call<AiSuggestResponse>("POST", "/ai/suggest", body),
+
+    // Photos (docs/14)
+    createMediaUpload: (body: CreateMediaUploadRequest) => call<MediaUploadResponse>("POST", "/media/uploads", body),
+    completeMedia: (mediaId: string) => call<MediaResponse>("POST", `/media/${mediaId}/complete`, {}),
+    mediaUrls: (ids: string[]) => call<MediaUrlsResponse>("POST", "/media/urls", { ids }),
+
+    // Paiements mobile money (docs/12)
+    plans: () => call<PlanResponse[]>("GET", `/plans?${lang}`),
+    paymentOptions: () => call<PaymentOptionsResponse>("GET", "/payments/options"),
+    orders: () => call<OrderResponse[]>("GET", "/orders"),
+    order: (orderId: string) => call<OrderResponse>("GET", `/orders/${orderId}`),
+    /** La clé d'idempotence évite une double commande si le bouton est pressé deux fois. */
+    quote: (planCode: string, currency: string) => call<OrderQuoteResponse>("GET", `/orders/quote?planCode=${planCode}&currency=${currency}`),
+    createOrder: (body: CreateOrderInput, idempotencyKey: string) => call<OrderResponse>("POST", "/orders", body, { "idempotency-key": idempotencyKey }),
+    finalizeOrder: (orderId: string, otp: string) => call<OrderResponse>("POST", `/orders/${orderId}/finalize`, { otp }),
+    referral: () => call<ReferralSummaryResponse>("GET", "/referrals/me"),
+    attachReferral: (code: string) => call<void>("POST", "/me/referral", { code }),
+    giftFunding: (id: string, giftId: string) => call<GiftFundingResponse>("GET", `/experiences/${id}/gifts/${giftId}/funding`),
+    fundGift: (id: string, giftId: string, payer: MobileMoneyAccount) => call<GiftFundingResponse>("POST", `/experiences/${id}/gifts/${giftId}/funding`, { payer }),
+    finalizeGiftFunding: (id: string, giftId: string, otp: string) =>
+      call<GiftFundingResponse>("POST", `/experiences/${id}/gifts/${giftId}/funding/finalize`, { otp }),
   };
 }
 

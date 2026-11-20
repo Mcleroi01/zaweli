@@ -6,7 +6,8 @@ import { usePathname, useRouter } from "next/navigation";
 import { createContext, type ReactNode, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { type AccountDictionary, getAccountDictionary } from "@/i18n/account";
 import { localePath } from "@/i18n/routing";
-import { type AccountApi, authConfigured, createAccountApi, getSupabase } from "./client";
+import { clearStoredReferral, readStoredReferral } from "@/components/site/referral-capture";
+import { type AccountApi, ApiRequestError, authConfigured, createAccountApi, getSupabase } from "./client";
 
 type SessionState =
   | { kind: "loading" }
@@ -50,6 +51,13 @@ export function AccountProvider({ locale, children }: { locale: Locale; children
         // Compte tout juste créé via Google : il prend la langue de la page d'où il vient.
         const created = new Date(session.user.created_at).getTime();
         if (profile.locale !== locale && Date.now() - created < 10 * 60_000) profile = await api.updateProfile({ locale });
+        // Arrivé par un lien de parrainage : on le déclare une fois (l'API refuse si le compte n'est plus nouveau).
+        const referral = readStoredReferral();
+        if (referral) {
+          await api.attachReferral(referral).then(clearStoredReferral, (e: unknown) => {
+            if (e instanceof ApiRequestError && e.status >= 400 && e.status < 500) clearStoredReferral();
+          });
+        }
       } catch {
         // API injoignable : l'espace s'affiche quand même, chaque écran signale l'erreur.
       }

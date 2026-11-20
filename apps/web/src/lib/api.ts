@@ -30,14 +30,26 @@ export async function fetchHealth(): Promise<HealthResult> {
   }
 }
 
+export type PublicExperienceState =
+  | { kind: "ok"; experience: PublicExperienceResponse }
+  /** Protégée par un code : la page le demande au destinataire. */
+  | { kind: "locked" }
+  /** Pas encore ouverte : date choisie par l'expéditeur. */
+  | { kind: "later"; availableFrom: string };
+
 /**
  * Expérience publiée, pour le destinataire. `null` si elle n'est pas
  * disponible (inexistante, désactivée, suspendue…) : l'API ne distingue pas.
  */
-export async function fetchPublicExperience(slug: string): Promise<PublicExperienceResponse | null> {
+export async function fetchPublicExperience(slug: string): Promise<PublicExperienceState | null> {
   if (!experienceSlugSchema.safeParse(slug).success) return null;
   const res = await fetch(`${apiBaseUrl()}/v1/public/experiences/${slug}`, { signal: AbortSignal.timeout(5000) });
   if (res.status === 404) return null;
+  if (res.status === 401) return { kind: "locked" };
+  if (res.status === 423) {
+    const body = (await res.json().catch(() => null)) as { error?: { details?: { availableFrom?: string } } } | null;
+    return { kind: "later", availableFrom: body?.error?.details?.availableFrom ?? new Date().toISOString() };
+  }
   if (!res.ok) throw new Error(`API : ${res.status}`);
-  return publicExperienceResponseSchema.parse(await res.json());
+  return { kind: "ok", experience: publicExperienceResponseSchema.parse(await res.json()) };
 }

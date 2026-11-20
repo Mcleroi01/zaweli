@@ -37,6 +37,8 @@ export function AccountShell({ children }: { children: ReactNode }) {
     { href: "/espace/experiences", label: t.nav.experiences, icon: ICONS.gift },
     { href: "/espace/destinataires", label: t.nav.recipients, icon: ICONS.people },
     { href: "/espace/licences", label: t.nav.licenses, icon: ICONS.ticket },
+    { href: "/espace/achats", label: t.nav.orders, icon: ICONS.ticket },
+    { href: "/espace/parrainage", label: t.nav.referral, icon: ICONS.people },
     { href: "/espace/compte", label: t.nav.settings, icon: ICONS.user },
   ];
   const active = (href: string) => (href === "/espace" ? current === "/espace" : current.startsWith(href));

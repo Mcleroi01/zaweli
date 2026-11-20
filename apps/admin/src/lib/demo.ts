@@ -12,6 +12,7 @@ import {
   type AdminCalendarResponse,
   type AdminGeoResponse,
   type AdminOverviewResponse,
+  type AdminPaymentSettingsResponse,
   type AdminSubscriptionsResponse,
   type AdminTimeseriesResponse,
   type AuditItem,
@@ -187,6 +188,18 @@ function journal(d: Dataset, action: string, entityType: string, entityId: strin
     requestId: null,
   });
 }
+
+const demoPayments: AdminPaymentSettingsResponse = {
+  mode: "sandbox",
+  webhookUrl: null,
+  moneyFeeRate: null,
+  moneyTransfersEnabled: false,
+  refereeDiscountRate: null,
+  rewardTiers: [
+    { threshold: 25, amount: "5.00", currency: "USD" },
+    { threshold: 50, amount: "10.00", currency: "USD" },
+  ],
+};
 
 export function createDemoApi(tz: string): AdminApi {
   let data: Dataset | null = null;
@@ -450,6 +463,19 @@ export function createDemoApi(tz: string): AdminApi {
       d.reference = currency;
       return createDemoApiFor(d).exchangeRates();
     },
+
+    // Paiements : réglages en mémoire ; pas de commandes inventées (la démonstration le dit).
+    paymentSettings: () => wait({ ...demoPayments }),
+    updatePaymentSettings: async (body) => {
+      const d = db();
+      Object.assign(demoPayments, Object.fromEntries(Object.entries(body).filter(([, v]) => v !== undefined)));
+      journal(d, "setting.updated", "app_setting", "payments", body as Record<string, unknown>);
+      return wait({ ...demoPayments });
+    },
+    paymentOrders: () => wait([]),
+    paymentTransfers: () => wait([]),
+    reconcilePayments: () => wait({ checked: 0, settled: 0 }),
+    referrers: () => wait([]),
   };
 
   function createDemoApiFor(d: Dataset) {

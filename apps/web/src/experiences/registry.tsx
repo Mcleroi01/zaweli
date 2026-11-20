@@ -2,10 +2,10 @@
 
 import dynamic from "next/dynamic";
 import type { ComponentType } from "react";
-import type { ExperienceMode } from "@zaweli/template-engine/react";
+import type { ExperienceMode, ExperienceServices } from "@zaweli/template-engine/react";
 import type { PublicPayload } from "@zaweli/template-engine/schema";
 
-type RendererProps = { payload: PublicPayload; mode: ExperienceMode; storageKey?: string };
+type RendererProps = { payload: PublicPayload; mode: ExperienceMode; storageKey?: string; services?: ExperienceServices };
 
 function Loading() {
   return <div className="min-h-svh bg-[#2a0509]" aria-busy="true" aria-label="Chargement de l'expérience" />;

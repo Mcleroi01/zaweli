@@ -86,12 +86,27 @@ export function MissingRates({ currencies, reference }: { currencies: string[]; 
   );
 }
 
-/** Données du graphique sous forme de tableau : identité jamais portée par la couleur seule. */
-export function DataTable({ caption, columns, rows }: { caption: string; columns: string[]; rows: Array<Array<ReactNode>> }) {
-  return (
-    <details className="mt-3 text-[0.82rem]">
-      <summary className="cursor-pointer text-muted hover:text-ink">Afficher les données</summary>
-      <div className="relative mt-2 max-h-72 overflow-auto rounded-lg border border-line">
+/**
+ * Tableau de données. Par défaut replié sous un graphique (alternative texte :
+ * identité jamais portée par la couleur seule) ; `open` l'affiche directement
+ * quand le tableau EST le contenu (listes de commandes, de transferts…).
+ */
+export function DataTable({
+  caption,
+  columns,
+  rows,
+  open = false,
+  empty,
+}: {
+  caption: string;
+  columns: string[];
+  rows: Array<Array<ReactNode>>;
+  open?: boolean;
+  empty?: string;
+}) {
+  if (open && rows.length === 0 && empty) return <p className="py-4 text-[0.85rem] text-muted">{empty}</p>;
+  const table = (
+      <div className={`relative overflow-auto rounded-lg border border-line ${open ? "max-h-[28rem]" : "mt-2 max-h-72"}`}>
         <table className="tabular w-full text-left">
           <caption className="sr-only">{caption}</caption>
           <thead className="sticky top-0 bg-raised">
@@ -116,6 +131,12 @@ export function DataTable({ caption, columns, rows }: { caption: string; columns
           </tbody>
         </table>
       </div>
+  );
+  if (open) return <div className="text-[0.82rem]">{table}</div>;
+  return (
+    <details className="mt-3 text-[0.82rem]">
+      <summary className="cursor-pointer text-muted hover:text-ink">Afficher les données</summary>
+      {table}
     </details>
   );
 }
