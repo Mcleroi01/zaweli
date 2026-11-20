@@ -587,6 +587,17 @@ describe("Administration des paiements", () => {
     expect(audit.rows[0]!.n).toBe(4);
   });
 
+  it("modifie une formule champ par champ sans toucher aux autres", async () => {
+    const admin = await profiledUser();
+    await pg.query("insert into app.user_roles (user_id, role) values ($1, 'admin')", [admin]);
+    const before = await pg.query<Record<string, unknown>>("select is_active, is_public, duration_days, publications_max, start_policy from app.plans where code = 'SOLO'");
+    const res = await http().patch("/v1/admin/plans/SOLO").set(as(admin)).send({ aiGenerationsMax: 5 }).expect(200);
+    expect(res.body).toMatchObject({ ai_generations_max: 5, is_active: true, is_public: true, duration_days: 7, publications_max: 1 });
+    const after = await pg.query<Record<string, unknown>>("select is_active, is_public, duration_days, publications_max, start_policy from app.plans where code = 'SOLO'");
+    expect(after.rows[0]).toEqual(before.rows[0]);
+    await http().patch("/v1/admin/plans/SOLO").set(as(admin)).send({}).expect(400);
+  });
+
   it("liste commandes et transferts, et revérifie les paiements en attente", async () => {
     const admin = await profiledUser();
     await pg.query("insert into app.user_roles (user_id, role) values ($1, 'admin')", [admin]);

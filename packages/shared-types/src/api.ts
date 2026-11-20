@@ -300,28 +300,56 @@ export const suspendExperienceSchema = z.strictObject({ reason: trimmed(1, 500) 
 const planCode = z.string().regex(/^[A-Z][A-Z0-9_]{1,31}$/);
 const tag = z.string().regex(/^[a-z0-9-]{2,40}$/);
 
+/** Champs d'une formule, sans valeur par défaut (la création les ajoute, la modification jamais). */
+const planFields = {
+  name: trimmed(1, 80),
+  description: trimmed(0, 500).nullable(),
+  translations: translationsSchema,
+  isFree: z.boolean(),
+  isActive: z.boolean(),
+  isPublic: z.boolean(),
+  position: z.number().int(),
+  durationDays: z.number().int().positive().nullable(),
+  startPolicy: z.enum(["on_payment_confirmed", "on_first_publication", "immediate"]),
+  publicationsMax: z.number().int().positive().nullable(),
+  recipientsMax: z.number().int().positive().nullable(),
+  aiGenerationsMax: z.number().int().min(0),
+  templateAccessTag: tag.nullable(),
+  editPolicy: z.enum(["while_valid", "days", "never"]),
+  editDays: z.number().int().positive().nullable(),
+  maxPublicationsPerDay: z.number().int().positive(),
+};
+
 export const adminPlanSchema = z.strictObject({
   code: planCode,
-  name: trimmed(1, 80),
-  description: trimmed(0, 500).nullable().optional(),
-  translations: translationsSchema.optional(),
-  isFree: z.boolean().default(false),
-  isActive: z.boolean().default(false),
-  isPublic: z.boolean().default(false),
-  position: z.number().int().default(0),
-  durationDays: z.number().int().positive().nullable().default(null),
-  startPolicy: z.enum(["on_payment_confirmed", "on_first_publication", "immediate"]).default("on_payment_confirmed"),
-  publicationsMax: z.number().int().positive().nullable().default(null),
-  recipientsMax: z.number().int().positive().nullable().default(null),
-  aiGenerationsMax: z.number().int().min(0).default(0),
-  templateAccessTag: tag.nullable().default(null),
-  editPolicy: z.enum(["while_valid", "days", "never"]).default("while_valid"),
-  editDays: z.number().int().positive().nullable().default(null),
-  maxPublicationsPerDay: z.number().int().positive().default(20),
+  name: planFields.name,
+  description: planFields.description.optional(),
+  translations: planFields.translations.optional(),
+  isFree: planFields.isFree.default(false),
+  isActive: planFields.isActive.default(false),
+  isPublic: planFields.isPublic.default(false),
+  position: planFields.position.default(0),
+  durationDays: planFields.durationDays.default(null),
+  startPolicy: planFields.startPolicy.default("on_payment_confirmed"),
+  publicationsMax: planFields.publicationsMax.default(null),
+  recipientsMax: planFields.recipientsMax.default(null),
+  aiGenerationsMax: planFields.aiGenerationsMax.default(0),
+  templateAccessTag: planFields.templateAccessTag.default(null),
+  editPolicy: planFields.editPolicy.default("while_valid"),
+  editDays: planFields.editDays.default(null),
+  maxPublicationsPerDay: planFields.maxPublicationsPerDay.default(20),
 });
 export type AdminPlanRequest = z.infer<typeof adminPlanSchema>;
 
-export const adminPlanUpdateSchema = adminPlanSchema.omit({ code: true }).partial();
+/**
+ * Modification partielle d'une formule : un champ absent ne change pas.
+ * (Avec `adminPlanSchema.partial()`, Zod donnerait à chaque champ absent sa
+ * valeur par défaut : formule désactivée, durée effacée…)
+ */
+export const adminPlanUpdateSchema = z
+  .strictObject(planFields)
+  .partial()
+  .refine((v) => Object.keys(v).length > 0, "au moins un champ");
 
 export const adminPriceSchema = z.strictObject({
   currency: z.string().regex(/^[A-Z]{3}$/),
