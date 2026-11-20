@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import {
   type ExperienceMode,
+  type ExperienceServices,
   ExperienceRuntimeProvider,
   lockScroll,
   scrollToTop,
@@ -66,9 +67,9 @@ function Story() {
   );
 }
 
-export function EclatExperience({ payload, mode }: { payload: PublicPayload; mode: ExperienceMode; storageKey?: string }) {
+export function EclatExperience({ payload, mode, services }: { payload: PublicPayload; mode: ExperienceMode; storageKey?: string; services?: ExperienceServices }) {
   return (
-    <ExperienceRuntimeProvider payload={payload} mode={mode}>
+    <ExperienceRuntimeProvider payload={payload} mode={mode} services={services}>
       <div data-template="eclat" className="ec-root grain">
         <Story />
       </div>

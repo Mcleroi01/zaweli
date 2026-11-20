@@ -9,7 +9,7 @@
  *    obfuscation contre la lecture du code source, pas une protection de
  *    valeur — une énigme qui protège une valeur se valide côté serveur).
  */
-import type { Locale } from "@zaweli/shared-types";
+import type { Locale, MusicChoice } from "@zaweli/shared-types";
 import type { CompiledContent } from "./compile.js";
 import type { PublicGift } from "./gifts.js";
 import type { TemplateManifest } from "./manifest.js";
@@ -48,6 +48,8 @@ export type PublicPayload = {
   salt: string;
   /** Langue des textes fixes du template (absente des anciens instantanés : français). */
   locale?: Locale;
+  /** Musique choisie par l'expéditeur (référence Audius), lancée au premier geste du destinataire. */
+  music?: MusicChoice;
 };
 
 export async function sha256Hex(input: string): Promise<string> {

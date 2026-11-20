@@ -108,22 +108,46 @@ function isRequired(def: FieldDef): boolean {
  * template. Les clés inconnues sont refusées (pas de champ non prévu).
  */
 export function compileContentSchema(manifest: TemplateManifest, mode: ValidationMode) {
+  const publish = mode === "publish";
+  const optionalSections = manifest.sections.filter((s) => s.optional).map((s) => s.id);
+  // Champs d'une scène facultative (étape du même identifiant) : exigés seulement si la scène est gardée.
+  const sectionOf = new Map<string, string>(
+    manifest.steps.filter((step) => optionalSections.includes(step.id)).flatMap((step) => step.fields.map((field) => [field, step.id] as const)),
+  );
+
   const shape: Record<string, z.ZodType> = {};
   for (const [id, def] of Object.entries(manifest.fields)) {
+    if (publish && sectionOf.has(id)) {
+      shape[id] = fieldSchema(def, "draft").optional();
+      continue;
+    }
     const schema = fieldSchema(def, mode);
-    shape[id] = mode === "publish" && isRequired(def) ? schema : schema.optional();
+    shape[id] = publish && isRequired(def) ? schema : schema.optional();
   }
 
-  const optionalSections = manifest.sections.filter((s) => s.optional).map((s) => s.id);
-
-  return z.strictObject({
-    fields: z.strictObject(shape),
-    /** Sections masquées par l'expéditeur : uniquement parmi les facultatives. */
-    disabledSections: z
-      .array(optionalSections.length > 0 ? z.enum(optionalSections as [string, ...string[]]) : z.never())
-      .max(optionalSections.length)
-      .default([]),
-  });
+  return z
+    .strictObject({
+      fields: z.strictObject(shape),
+      /** Sections masquées par l'expéditeur : uniquement parmi les facultatives. */
+      disabledSections: z
+        .array(optionalSections.length > 0 ? z.enum(optionalSections as [string, ...string[]]) : z.never())
+        .max(optionalSections.length)
+        .default([]),
+    })
+    .superRefine((content, ctx) => {
+      if (!publish) return;
+      for (const [field, section] of sectionOf) {
+        if (content.disabledSections.includes(section)) continue;
+        const def = manifest.fields[field]!;
+        const value = content.fields[field];
+        if (value === undefined) {
+          if (isRequired(def)) ctx.addIssue({ code: "custom", path: ["fields", field], message: "Invalid input: expected value, received undefined" });
+          continue;
+        }
+        const checked = fieldSchema(def, "publish").safeParse(value);
+        if (!checked.success) for (const issue of checked.error.issues) ctx.addIssue({ code: "custom", path: ["fields", field, ...issue.path], message: issue.message });
+      }
+    });
 }
 
 export type CompiledContent = z.infer<ReturnType<typeof compileContentSchema>>;

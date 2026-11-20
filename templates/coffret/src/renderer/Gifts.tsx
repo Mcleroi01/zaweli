@@ -23,8 +23,19 @@ export function Gifts({ onNext, showNext }: StageProps) {
   const root = useRef<HTMLElement>(null);
   const title = useField<string>("giftsTitle");
   const gifts = useField<PublicGift[]>("gifts");
-  const { locale } = useRuntime();
+  const { locale, mode, services } = useRuntime();
   const [opened, setOpened] = useState<number[]>([]);
+  // Code d'un bon cadeau : demandé à la page au moment du déballage, jamais avant (§9.4).
+  const [secrets, setSecrets] = useState<Record<string, string>>({});
+  const reveal = (gift: PublicGift) => {
+    if (gift.type !== "VOUCHER" || !services.revealGift) return;
+    void services
+      .revealGift(gift.id)
+      .then((data) => {
+        if (typeof data?.code === "string") setSecrets((s) => ({ ...s, [gift.id]: data.code as string }));
+      })
+      .catch(() => undefined);
+  };
   const { contextSafe } = useGSAP({ scope: root });
 
   const unwrap = contextSafe((i: number, e: MouseEvent<HTMLButtonElement>) => {
@@ -43,6 +54,7 @@ export function Gifts({ onNext, showNext }: StageProps) {
         const r = box.getBoundingClientRect();
         confetti.burst({ x: r.left + r.width / 2, y: r.top + 10, count: 45, power: 8 });
         setOpened((o) => [...o, i]);
+        reveal(gifts[i]!);
       });
   });
 
@@ -99,8 +111,25 @@ export function Gifts({ onNext, showNext }: StageProps) {
                   {line}
                 </span>
               ))}
+              {secrets[gift.id] && (
+                <span className="mt-2 block font-mono text-[16px] tracking-wider text-cf-ink">
+                  Code : {secrets[gift.id]}
+                </span>
+              )}
               {d.message && <span className="mt-2 block text-[15px] leading-[1.45] text-cf-ink/85 italic">« {d.message} »</span>}
               {d.note && <span className="mt-2 block text-[12px] leading-[1.4] text-[#8a6a2e]">{d.note}</span>}
+              {d.action?.kind === "claim" &&
+                (mode === "live" ? (
+                  // Page de réception du site, à côté de l'expérience : /g/<lien>/recevoir/<cadeau>.
+                  <a
+                    href={`${window.location.pathname.replace(/\/+$/, "")}/recevoir/${gift.id}`}
+                    className="focus-ring mt-3 inline-flex min-h-11 items-center rounded-full bg-cf-ink px-5 text-[14px] text-cf-ivory"
+                  >
+                    {d.action.label}
+                  </a>
+                ) : (
+                  <span className="mt-3 inline-flex min-h-11 items-center rounded-full bg-cf-ink/60 px-5 text-[14px] text-cf-ivory">{d.action.label}</span>
+                ))}
             </li>
           );
         })}

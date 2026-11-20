@@ -5,6 +5,7 @@
 import { z } from "zod";
 import { countryCodeSchema } from "./geo.js";
 import { giftTypeSchema } from "./gifts.js";
+import { type MusicChoice, musicChoiceSchema } from "./music.js";
 import { localeSchema, translationsSchema, type Locale } from "./i18n.js";
 
 const trimmed = (min: number, max: number) => z.string().trim().min(min).max(max);
@@ -18,11 +19,17 @@ export const updateProfileSchema = z
     displayName: trimmed(1, 80).nullable().optional(),
     locale: localeSchema.optional(),
     marketingOptIn: z.boolean().optional(),
+    /** E-mail de rappel quelques jours avant la fin d'une licence. */
+    notifyLicenseExpiry: z.boolean().optional(),
     /** Pays déclaré par l'utilisateur (ISO 3166-1 alpha-2), ou null pour l'effacer. */
     countryCode: countryCodeSchema.nullable().optional(),
   })
   .refine((v) => Object.keys(v).length > 0, "au moins un champ");
 export type UpdateProfileRequest = z.infer<typeof updateProfileSchema>;
+
+/** Suppression du compte : l'adresse e-mail est retapée pour confirmer. */
+export const deleteAccountSchema = z.strictObject({ confirmEmail: z.string().trim().min(3).max(254) });
+export type DeleteAccountRequest = z.infer<typeof deleteAccountSchema>;
 
 export type ProfileResponse = {
   id: string;
@@ -30,6 +37,7 @@ export type ProfileResponse = {
   displayName: string | null;
   locale: Locale;
   marketingOptIn: boolean;
+  notifyLicenseExpiry: boolean;
   emailVerified: boolean;
   /** Pays du compte : déclaré, ou à défaut déduit de la connexion. */
   countryCode: string | null;
@@ -166,6 +174,12 @@ export type ExperienceSummaryResponse = {
 
 export type ExperienceDetailResponse = ExperienceSummaryResponse & {
   content: { fields: Record<string, unknown>; disabledSections: string[] };
+  /** Un code est demandé au destinataire (le code lui-même n'est jamais renvoyé). */
+  hasAccessCode: boolean;
+  /** Le lien ne s'ouvre qu'à partir de cette date (ISO), ou null. */
+  availableFrom: string | null;
+  /** Musique choisie (référence Audius), ou null. */
+  music: MusicChoice | null;
   gifts: GiftResponse[];
   /** Erreurs qui empêchent la publication (vide si tout est prêt). */
   publishIssues: Array<{ path: string; message: string }>;
@@ -191,6 +205,27 @@ export type EligibilityResponse = {
 };
 
 export type PublishResponse = { slug: string; url: string; revision: number; licenseId: string | null };
+
+/** Nouvelle expérience pour une autre personne, à partir d'une existante (même modèle, même contenu, sans cadeau d'argent). */
+export const duplicateExperienceSchema = z.strictObject({ recipientId: z.uuid() });
+export type DuplicateExperienceRequest = z.infer<typeof duplicateExperienceSchema>;
+
+/**
+ * Réglages d'ouverture et ambiance : code demandé au destinataire, date
+ * d'ouverture du lien, musique. null efface ; absent ne change rien.
+ */
+export const experienceSettingsSchema = z
+  .strictObject({
+    accessCode: z.string().trim().min(4).max(20).nullable().optional(),
+    availableFrom: z.iso.datetime({ offset: true }).nullable().optional(),
+    music: musicChoiceSchema.nullable().optional(),
+  })
+  .refine((v) => Object.keys(v).length > 0, "au moins un réglage");
+export type ExperienceSettingsRequest = z.infer<typeof experienceSettingsSchema>;
+
+/** Code saisi par le destinataire pour ouvrir une expérience protégée. */
+export const unlockExperienceSchema = z.strictObject({ code: z.string().trim().min(1).max(40) });
+export type UnlockExperienceRequest = z.infer<typeof unlockExperienceSchema>;
 
 // ---------------------------------------------------------------------
 // Cadeaux

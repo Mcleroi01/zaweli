@@ -60,6 +60,11 @@ describe("Coffret 1.0.0", () => {
     // Seules les sections facultatives peuvent être masquées.
     expect(publish.safeParse({ ...validContent, disabledSections: ["jewel", "gifts"] }).success).toBe(true);
     expect(publish.safeParse({ ...validContent, disabledSections: ["finale"] }).success).toBe(false);
+    // Une scène masquée n'exige plus ses champs (ici : ni titre ni cadeaux).
+    const { gifts: _gifts, giftsTitle: _title, ...withoutGifts } = validContent.fields;
+    expect(publish.safeParse({ fields: withoutGifts, disabledSections: ["gifts"] }).success).toBe(true);
+    // … mais les exige si elle est gardée.
+    expect(publish.safeParse({ fields: withoutGifts, disabledSections: [] }).success).toBe(false);
   });
 
   it("du contenu validé à la charge publique", async () => {

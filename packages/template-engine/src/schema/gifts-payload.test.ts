@@ -50,6 +50,18 @@ describe("describeGift : la vérité avant tout (P6)", () => {
     expect(d.note).toBe("Transfert confirmé.");
   });
 
+  it("un cadeau versé via ZAWELI propose de le recevoir, sans jamais se dire reçu avant confirmation", () => {
+    const money = (status: string) =>
+      describeGift({ id: ID(1), type: "MONEY", status, data: { amount: 20, currency: "USD", receptionMode: "zaweli_transfer" } });
+    expect(money("AWAITING_CLAIM").action).toEqual({ kind: "claim", label: "Recevoir l'argent" });
+    expect(money("FAILED").action?.kind).toBe("claim");
+    expect(money("TRANSFER_PENDING").note).toBe("Envoi en cours vers ton mobile money.");
+    expect(money("TRANSFER_PENDING").action).toBeUndefined();
+    expect(money("TRANSFERRED").note).toBe("Transfert confirmé.");
+    expect(money("TRANSFERRED").action).toBeUndefined();
+    for (const status of ["AWAITING_CLAIM", "FAILED", "TRANSFER_PENDING"]) expect(money(status).note).not.toMatch(/confirmé/);
+  });
+
   it("formate une invitation en français", () => {
     const d = describeGift({
       id: ID(2),

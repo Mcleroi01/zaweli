@@ -3,12 +3,23 @@
 import { createContext, type ReactNode, useContext, useMemo } from "react";
 import { DEFAULT_LOCALE, type Locale } from "@zaweli/shared-types";
 import { checkRiddleAnswer, type PublicPayload, type PublicRiddle } from "../schema/payload.js";
+import { MusicLayer } from "./music.js";
 
 /**
  * Seule porte d'un template vers l'extérieur (architecture §5.5).
  * Un template ne fait jamais d'appel réseau lui-même.
  */
 export type ExperienceMode = "live" | "preview" | "demo";
+
+/**
+ * Services fournis par la page qui affiche l'expérience (le template ne
+ * fait jamais d'appel réseau lui-même). Tous facultatifs : en démonstration
+ * ou en aperçu, ils sont simplement absents.
+ */
+export type ExperienceServices = {
+  /** Données protégées d'un cadeau (ex. code d'un bon), livrées au déballage ; null s'il n'y en a pas. */
+  revealGift?: (giftId: string) => Promise<Record<string, unknown> | null>;
+};
 
 export type ExperienceRuntime = {
   mode: ExperienceMode;
@@ -19,6 +30,7 @@ export type ExperienceRuntime = {
   field: <T>(id: string) => T | undefined;
   isSectionEnabled: (sectionId: string) => boolean;
   checkRiddle: (riddleIndex: number, riddle: PublicRiddle, choiceIndex: number) => Promise<boolean>;
+  services: ExperienceServices;
 };
 
 const RuntimeContext = createContext<ExperienceRuntime | null>(null);
@@ -26,10 +38,12 @@ const RuntimeContext = createContext<ExperienceRuntime | null>(null);
 export function ExperienceRuntimeProvider({
   payload,
   mode,
+  services,
   children,
 }: {
   payload: PublicPayload;
   mode: ExperienceMode;
+  services?: ExperienceServices;
   children: ReactNode;
 }) {
   const value = useMemo<ExperienceRuntime>(
@@ -40,10 +54,17 @@ export function ExperienceRuntimeProvider({
       field: <T,>(id: string) => payload.fields[id] as T | undefined,
       isSectionEnabled: (id) => !payload.disabledSections.includes(id),
       checkRiddle: (index, riddle, choice) => checkRiddleAnswer(payload, index, riddle, choice),
+      services: services ?? {},
     }),
-    [payload, mode],
+    [payload, mode, services],
   );
-  return <RuntimeContext.Provider value={value}>{children}</RuntimeContext.Provider>;
+  return (
+    <RuntimeContext.Provider value={value}>
+      {children}
+      {/* Musique de l'expéditeur : pas en démonstration (contenu d'exemple), oui en aperçu et en vrai. */}
+      {payload.music && mode !== "demo" && <MusicLayer music={payload.music} locale={value.locale} />}
+    </RuntimeContext.Provider>
+  );
 }
 
 export function useRuntime(): ExperienceRuntime {

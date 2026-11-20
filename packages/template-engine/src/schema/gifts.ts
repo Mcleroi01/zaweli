@@ -27,7 +27,7 @@ export const giftDataSchemas = {
     amount: z.number().positive().max(1_000_000_000),
     currency: currencySchema,
     message: optionalText(240),
-    receptionMode: z.enum(["in_person", "sender_mobile_money", "other"]),
+    receptionMode: z.enum(["in_person", "sender_mobile_money", "other", "zaweli_transfer"]),
   }),
   PHYSICAL: z.strictObject({
     name: text(80),
@@ -76,7 +76,7 @@ export type PublicGift = {
 
 type Wording = {
   reception: Record<GiftData<"MONEY">["receptionMode"], string>;
-  money: { kicker: string; confirmed: string; promise: string };
+  money: { kicker: string; confirmed: string; promise: string; claim: string; claimNote: string; sending: string; retry: string };
   physical: { kicker: string; handedOver: string };
   invitation: { kicker: string; at: (time: string) => string; cancelled: string };
   voucher: { kicker: string; at: (issuer: string) => string; until: (date: string) => string };
@@ -90,11 +90,16 @@ const WORDING: Record<Locale, Wording> = {
       in_person: "Remis en main propre",
       sender_mobile_money: "Envoyé par mobile money",
       other: "Modalité convenue ensemble",
+      zaweli_transfer: "Versé via ZAWELI",
     },
     money: {
       kicker: "Je t'offre",
       confirmed: "Transfert confirmé.",
       promise: "Une promesse de l'expéditeur : ce montant n'a pas transité par ZAWELI.",
+      claim: "Recevoir l'argent",
+      claimNote: "Cet argent est déjà versé : indique ton numéro mobile money pour le recevoir.",
+      sending: "Envoi en cours vers ton mobile money.",
+      retry: "L'envoi n'a pas abouti : tu peux réessayer avec un autre numéro.",
     },
     physical: { kicker: "Un cadeau t'attend", handedOver: "Remis, d'après l'expéditeur." },
     invitation: { kicker: "Je t'invite", at: (t) => ` à ${t.replace(":", " h ")}`, cancelled: "Cette invitation a été annulée." },
@@ -106,11 +111,16 @@ const WORDING: Record<Locale, Wording> = {
       in_person: "Handed over in person",
       sender_mobile_money: "Sent by mobile money",
       other: "Arranged together",
+      zaweli_transfer: "Paid through ZAWELI",
     },
     money: {
       kicker: "I'm giving you",
       confirmed: "Transfer confirmed.",
       promise: "A promise from the sender: this amount did not go through ZAWELI.",
+      claim: "Receive the money",
+      claimNote: "This money has already been paid: enter your mobile money number to receive it.",
+      sending: "Sending to your mobile money.",
+      retry: "The transfer did not go through: you can try again with another number.",
     },
     physical: { kicker: "A gift is waiting for you", handedOver: "Handed over, according to the sender." },
     invitation: { kicker: "You're invited", at: (t) => ` at ${t}`, cancelled: "This invitation has been cancelled." },
@@ -135,6 +145,8 @@ export type GiftDescription = {
   message?: string;
   /** Mention de vérité affichée au destinataire, si nécessaire (principe P6). */
   note?: string;
+  /** Action proposée au destinataire (cadeau d'argent versé via ZAWELI, à recevoir). */
+  action?: { kind: "claim"; label: string };
 };
 
 /**
@@ -148,13 +160,14 @@ export function describeGift(gift: PublicGift, locale: Locale = DEFAULT_LOCALE):
     case "MONEY": {
       const d = gift.data;
       const confirmed = gift.status === "TRANSFERRED";
-      return {
-        kicker: w.money.kicker,
-        title: formatAmount(d.amount, d.currency, locale),
-        lines: [w.reception[d.receptionMode]],
-        message: d.message,
-        note: confirmed ? w.money.confirmed : w.money.promise,
-      };
+      const base = { kicker: w.money.kicker, title: formatAmount(d.amount, d.currency, locale), lines: [w.reception[d.receptionMode]], message: d.message };
+      if (confirmed) return { ...base, note: w.money.confirmed };
+      if (d.receptionMode !== "zaweli_transfer") return { ...base, note: w.money.promise };
+      // Versé via ZAWELI : l'argent est confirmé par le prestataire ; reste à le recevoir.
+      if (gift.status === "AWAITING_CLAIM") return { ...base, note: w.money.claimNote, action: { kind: "claim", label: w.money.claim } };
+      if (gift.status === "FAILED") return { ...base, note: w.money.retry, action: { kind: "claim", label: w.money.claim } };
+      if (gift.status === "TRANSFER_PENDING") return { ...base, note: w.money.sending };
+      return { ...base, note: w.money.promise };
     }
     case "PHYSICAL": {
       const d = gift.data;

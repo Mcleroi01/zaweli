@@ -5,6 +5,7 @@ import {
   ConfettiLayer,
   type ExperienceMode,
   ExperienceRunner,
+  type ExperienceServices,
   ExperienceRuntimeProvider,
   type RunnerSection,
 } from "@zaweli/template-engine/react";
@@ -22,10 +23,12 @@ type Props = {
   mode: ExperienceMode;
   /** Clé de mémorisation locale de la progression (ex. le slug de l'expérience). */
   storageKey?: string;
+  /** Services de la page (révélation des cadeaux protégés). */
+  services?: ExperienceServices;
 };
 
 /** Coffret 1.0.0 : assemblage des scènes sur le moteur d'étapes générique. */
-export function CoffretExperience({ payload, mode, storageKey }: Props) {
+export function CoffretExperience({ payload, mode, storageKey, services }: Props) {
   const riddles = (payload.fields.riddles as PublicRiddle[] | undefined) ?? [];
 
   const sections = useMemo<RunnerSection[]>(
@@ -44,7 +47,7 @@ export function CoffretExperience({ payload, mode, storageKey }: Props) {
   );
 
   return (
-    <ExperienceRuntimeProvider payload={payload} mode={mode}>
+    <ExperienceRuntimeProvider payload={payload} mode={mode} services={services}>
       <div data-template="coffret" className="velvet min-h-[100svh]">
         <div className="grain" aria-hidden="true" />
         <ExperienceRunner

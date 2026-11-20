@@ -6,3 +6,8 @@ export * from "./messages.js";
 export * from "./api.js";
 export * from "./geo.js";
 export * from "./admin-insights.js";
+export * from "./payments.js";
+export * from "./music.js";
+export * from "./referrals.js";
+export * from "./media.js";
+export * from "./ai.js";

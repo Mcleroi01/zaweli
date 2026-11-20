@@ -70,6 +70,36 @@ export const ERROR_CODES = [
   "REPORT_ALREADY_HANDLED",
   // Statistiques et finances (administration)
   "EXCHANGE_RATE_EXISTS",
+  // Paiements (MbiyoPay)
+  "PAYMENTS_UNAVAILABLE",
+  "PLAN_PRICE_NOT_FOUND",
+  "PAYMENT_AMOUNT_OUT_OF_RANGE",
+  "PAYMENT_REJECTED",
+  "PAYMENT_NOT_PENDING",
+  "MONEY_FEES_NOT_CONFIGURED",
+  "GIFT_LOCKED",
+  "GIFT_NOT_FUNDABLE",
+  "GIFT_NOT_CLAIMABLE",
+  // Ouverture de l'expérience (destinataire)
+  "ACCESS_CODE_REQUIRED",
+  "ACCESS_CODE_INVALID",
+  "NOT_YET_AVAILABLE",
+  // Aide à l'écriture
+  "AI_UNAVAILABLE",
+  "AI_FIELD_NOT_ALLOWED",
+  // Compte
+  "ACCOUNT_HAS_PENDING_MONEY",
+  // Photos
+  "MEDIA_UNAVAILABLE",
+  "MEDIA_NOT_FOUND",
+  "MEDIA_REJECTED",
+  "MEDIA_LIMIT_REACHED",
+  // Parrainage et cartes cadeaux
+  "REFERRAL_CODE_INVALID",
+  "REFERRAL_NOT_ALLOWED",
+  "ORDER_NOT_CREDIT_COVERED",
+  "PAYER_REQUIRED",
+  "MOBILE_MONEY_CURRENCY_UNSUPPORTED",
 ] as const;
 
 export const errorCodeSchema = z.enum(ERROR_CODES);
