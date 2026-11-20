@@ -11,6 +11,10 @@ import { ENV, type Env } from "./config/env.js";
 export function configureApp(app: INestApplication): INestApplication {
   const env = app.get<Env>(ENV);
 
+  // Derrière un CDN ou un serveur web (Hostinger), req.ip doit être le visiteur, pas le mandataire.
+  const http = app.getHttpAdapter().getInstance() as { set?: (key: string, value: unknown) => void };
+  http.set?.("trust proxy", env.TRUST_PROXY);
+
   // Identifiant de requête propagé (journaux, réponses d'erreur).
   app.use((req: Request, res: Response, next: NextFunction) => {
     const incoming = req.headers["x-request-id"];

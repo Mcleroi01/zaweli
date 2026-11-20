@@ -33,6 +33,19 @@ export const envSchema = z
       .regex(/^[a-z0-9-]*$/i, "nom d'en-tête HTTP attendu")
       .default("cf-ipcountry")
       .transform((s) => s.toLowerCase()),
+    /**
+     * Mandataires de confiance devant l'API (Express « trust proxy »), pour lire
+     * la vraie adresse IP du visiteur dans X-Forwarded-For : limites de débit,
+     * signalements. Vide : aucun (connexion directe). Un nombre = nombre de
+     * mandataires (Hostinger : CDN + serveur web = 2). Ou une liste d'adresses.
+     * Trop haut, un visiteur peut se faire passer pour un autre ; trop bas, tous
+     * les visiteurs partagent la même limite.
+     */
+    TRUST_PROXY: z
+      .string()
+      .trim()
+      .default("")
+      .transform((s): boolean | number | string => (s === "" || s === "false" ? false : s === "true" ? true : /^\d+$/.test(s) ? Number(s) : s)),
     CORS_ORIGINS: z
       .string()
       .default("")

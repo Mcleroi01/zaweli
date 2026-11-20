@@ -38,4 +38,11 @@ describe("loadEnv", () => {
   it("exige les origines CORS en production", () => {
     expect(() => loadEnv({ ...base, NODE_ENV: "production" })).toThrow(/CORS_ORIGINS/);
   });
+
+  it("lit TRUST_PROXY : vide, nombre de mandataires, booléen ou liste", () => {
+    expect(loadEnv(base).TRUST_PROXY).toBe(false);
+    expect(loadEnv({ ...base, TRUST_PROXY: "2" }).TRUST_PROXY).toBe(2);
+    expect(loadEnv({ ...base, TRUST_PROXY: "true" }).TRUST_PROXY).toBe(true);
+    expect(loadEnv({ ...base, TRUST_PROXY: "loopback, 10.0.0.0/8" }).TRUST_PROXY).toBe("loopback, 10.0.0.0/8");
+  });
 });
